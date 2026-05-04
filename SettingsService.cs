@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 
@@ -73,6 +75,18 @@ public sealed class SettingsService
         settings.CrosshairThickness = Math.Max(1, settings.CrosshairThickness);
         settings.MonitorIndex = Math.Max(0, settings.MonitorIndex);
 
+        settings.EnabledMonitorIndices ??= [];
+        settings.EnabledMonitorIndices = SanitizeMonitorIndices(settings.EnabledMonitorIndices);
+
+        if (string.IsNullOrWhiteSpace(settings.Language))
+        {
+            settings.Language = DetectDefaultLanguage();
+        }
+        else
+        {
+            settings.Language = NormalizeLanguage(settings.Language);
+        }
+
         settings.CenterDotShape = NormalizeEnum(settings.CenterDotShape, "Circle", "Square");
         settings.DotGridPointShape = NormalizeEnum(settings.DotGridPointShape, "Circle", "Square");
         settings.DotGridAreaShape = NormalizeEnum(settings.DotGridAreaShape, "Square", "Circle");
@@ -84,15 +98,44 @@ public sealed class SettingsService
 
         if (string.IsNullOrWhiteSpace(settings.DotGridColor))
         {
-            settings.DotGridColor = "#00FF00";
+            settings.DotGridColor = "#FFFFFF";
         }
 
         if (string.IsNullOrWhiteSpace(settings.CrosshairColor))
         {
-            settings.CrosshairColor = "#FF0000";
+            settings.CrosshairColor = "#FFFFFF";
         }
 
         return settings;
+    }
+
+    private static List<int> SanitizeMonitorIndices(List<int> values)
+    {
+        var unique = new HashSet<int>();
+        var result = new List<int>();
+
+        foreach (var value in values)
+        {
+            if (value < 0 || !unique.Add(value))
+            {
+                continue;
+            }
+
+            result.Add(value);
+        }
+
+        return result;
+    }
+
+    private static string DetectDefaultLanguage()
+    {
+        var twoLetters = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return string.Equals(twoLetters, "es", StringComparison.OrdinalIgnoreCase) ? "es" : "en";
+    }
+
+    private static string NormalizeLanguage(string value)
+    {
+        return string.Equals(value, "es", StringComparison.OrdinalIgnoreCase) ? "es" : "en";
     }
 
     private static string NormalizeEnum(string? value, params string[] allowed)

@@ -1,25 +1,31 @@
 using System;
+using System.Collections.Generic;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 
 namespace CrosshairOverlay;
 
 public partial class ConfigWindow : Window
 {
     private readonly OverlaySettingsStore _settingsStore;
+    private readonly IReadOnlyList<string> _monitorNames;
+    private readonly List<CheckBox> _monitorCheckBoxes = [];
     private bool _isUpdatingUi;
     private bool _isInitialized;
 
     public ConfigWindow()
-        : this(new OverlaySettingsStore(new SettingsService()))
+        : this(new OverlaySettingsStore(new SettingsService()), ["Monitor 1"])
     {
     }
 
-    public ConfigWindow(OverlaySettingsStore settingsStore)
+    public ConfigWindow(OverlaySettingsStore settingsStore, IReadOnlyList<string> monitorNames)
     {
         _settingsStore = settingsStore;
+        _monitorNames = monitorNames;
         _isUpdatingUi = true;
         InitializeComponent();
+        BuildMonitorSelectors();
 
         _settingsStore.SettingsChanged += OnStoreSettingsChanged;
         Closed += OnClosed;
@@ -42,6 +48,9 @@ public partial class ConfigWindow : Window
     private void PopulateFromSettings(OverlaySettings settings)
     {
         _isUpdatingUi = true;
+
+        Language.SelectedIndex = string.Equals(settings.Language, "es", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
+        Title = Language.SelectedIndex == 0 ? "Ajustes de Crosshair Overlay" : "Crosshair Overlay Settings";
 
         EnableCenterDot.IsChecked = settings.EnableCenterDot;
         CenterDotShape.SelectedIndex = ToShapeIndex(settings.CenterDotShape);
@@ -67,6 +76,12 @@ public partial class ConfigWindow : Window
         CrosshairThickness.Value = settings.CrosshairThickness;
         CrosshairOpacity.Value = settings.CrosshairOpacity;
         CrosshairColor.Text = settings.CrosshairColor;
+
+        var enabledMonitors = new HashSet<int>(settings.EnabledMonitorIndices ?? []);
+        for (var i = 0; i < _monitorCheckBoxes.Count; i++)
+        {
+            _monitorCheckBoxes[i].IsChecked = enabledMonitors.Contains(i);
+        }
 
         UpdateLabels();
         UpdateDotGridAreaEditors();
@@ -96,6 +111,7 @@ public partial class ConfigWindow : Window
 
         _settingsStore.Update(settings =>
         {
+            settings.Language = Language.SelectedIndex == 0 ? "es" : "en";
             settings.EnableCenterDot = EnableCenterDot.IsChecked ?? false;
             settings.CenterDotShape = FromShapeIndex(CenterDotShape.SelectedIndex);
             settings.CenterDotSize = CenterDotSize.Value;
@@ -120,7 +136,43 @@ public partial class ConfigWindow : Window
             settings.CrosshairThickness = CrosshairThickness.Value;
             settings.CrosshairOpacity = CrosshairOpacity.Value;
             settings.CrosshairColor = CrosshairColor.Text?.Trim() ?? "#FF0000";
+
+            settings.EnabledMonitorIndices = GetSelectedMonitorIndices();
         });
+
+        Title = Language.SelectedIndex == 0 ? "Ajustes de Crosshair Overlay" : "Crosshair Overlay Settings";
+    }
+
+    private void BuildMonitorSelectors()
+    {
+        MonitorSelectorPanel.Children.Clear();
+        _monitorCheckBoxes.Clear();
+
+        for (var i = 0; i < _monitorNames.Count; i++)
+        {
+            var checkBox = new CheckBox
+            {
+                Content = _monitorNames[i],
+                Foreground = Brushes.White
+            };
+            checkBox.IsCheckedChanged += OnAnySettingChanged;
+            _monitorCheckBoxes.Add(checkBox);
+            MonitorSelectorPanel.Children.Add(checkBox);
+        }
+    }
+
+    private List<int> GetSelectedMonitorIndices()
+    {
+        var selected = new List<int>();
+        for (var i = 0; i < _monitorCheckBoxes.Count; i++)
+        {
+            if (_monitorCheckBoxes[i].IsChecked == true)
+            {
+                selected.Add(i);
+            }
+        }
+
+        return selected;
     }
 
     private void UpdateLabels()

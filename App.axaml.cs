@@ -4,8 +4,10 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CrosshairOverlay.Platform;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace CrosshairOverlay;
 
@@ -13,8 +15,11 @@ public partial class App : Application
 {
     private IClassicDesktopStyleApplicationLifetime? _desktop;
     private OverlaySettingsStore? _settingsStore;
-    private MainWindow? _overlayWindow;
+    private readonly IWindowsOverlayPlatformService _platformService = new WindowsOverlayPlatformService();
+    private readonly WindowsDisplayService _displayService = new();
+    private readonly List<MainWindow> _overlayWindows = [];
     private ConfigWindow? _configWindow;
+    private string _lastMonitorSelectionKey = string.Empty;
 
     public override void Initialize()
     {
@@ -26,14 +31,14 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _desktop = desktop;
+            _desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             var settingsService = new SettingsService();
             _settingsStore = new OverlaySettingsStore(settingsService);
-            var platformService = new WindowsOverlayPlatformService();
-
-            _overlayWindow = new MainWindow(_settingsStore, platformService);
-            desktop.MainWindow = _overlayWindow;
+            _settingsStore.SettingsChanged += OnSettingsChanged;
 
             CreateTrayIcon();
+            RebuildOverlayWindows(_settingsStore.Current);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -46,11 +51,8 @@ public partial class App : Application
             return;
         }
 
-        var openSettingsItem = new NativeMenuItem("Open configuration");
+        var openSettingsItem = new NativeMenuItem("Ajustes");
         openSettingsItem.Click += (_, _) => OpenOrFocusConfigWindow();
-
-        var closeSettingsItem = new NativeMenuItem("Close configuration");
-        closeSettingsItem.Click += (_, _) => CloseConfigWindow();
 
         var exitItem = new NativeMenuItem("Exit");
         exitItem.Click += (_, _) => _desktop?.Shutdown();
@@ -58,7 +60,6 @@ public partial class App : Application
         var menu = new NativeMenu
         {
             openSettingsItem,
-            closeSettingsItem,
             new NativeMenuItemSeparator(),
             exitItem
         };
@@ -95,7 +96,7 @@ public partial class App : Application
 
         if (_configWindow is null)
         {
-            _configWindow = new ConfigWindow(_settingsStore);
+            _configWindow = new ConfigWindow(_settingsStore, BuildMonitorNames());
             _configWindow.Closed += (_, _) => _configWindow = null;
             _configWindow.Show();
             _configWindow.Activate();
@@ -111,9 +112,66 @@ public partial class App : Application
         _configWindow.Activate();
     }
 
-    private void CloseConfigWindow()
+    private void OnSettingsChanged(object? sender, OverlaySettings settings)
     {
-        _configWindow?.Close();
+        var selectionKey = BuildMonitorSelectionKey(settings.EnabledMonitorIndices);
+        if (!string.Equals(selectionKey, _lastMonitorSelectionKey, StringComparison.Ordinal))
+        {
+            RebuildOverlayWindows(settings);
+        }
+    }
+
+    private void RebuildOverlayWindows(OverlaySettings settings)
+    {
+        if (_desktop is null || _settingsStore is null)
+        {
+            return;
+        }
+
+        foreach (var window in _overlayWindows)
+        {
+            window.Close();
+        }
+
+        _overlayWindows.Clear();
+
+        var monitorBounds = _displayService.GetMonitorBounds();
+        var selectedIndices = (settings.EnabledMonitorIndices ?? [])
+            .Distinct()
+            .Where(index => index >= 0 && index < monitorBounds.Count)
+            .ToList();
+
+        foreach (var index in selectedIndices)
+        {
+            var window = new MainWindow(_settingsStore, _platformService, monitorBounds[index]);
+            _overlayWindows.Add(window);
+            window.Show();
+        }
+
+        _desktop.MainWindow = _overlayWindows.Count > 0 ? _overlayWindows[0] : null;
+        _lastMonitorSelectionKey = BuildMonitorSelectionKey(settings.EnabledMonitorIndices);
+    }
+
+    private IReadOnlyList<string> BuildMonitorNames()
+    {
+        var bounds = _displayService.GetMonitorBounds();
+        var names = new List<string>(bounds.Count);
+        for (var i = 0; i < bounds.Count; i++)
+        {
+            names.Add($"Monitor {i + 1} ({bounds[i].Width}x{bounds[i].Height})");
+        }
+
+        return names;
+    }
+
+    private static string BuildMonitorSelectionKey(IReadOnlyList<int>? selected)
+    {
+        if (selected is null || selected.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Join(",", selected.OrderBy(x => x));
     }
 
     private static WindowIcon? TryCreateTrayIcon()

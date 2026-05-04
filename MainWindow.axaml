@@ -4,7 +4,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="using:CrosshairOverlay"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="CrosshairOverlay.MainWindow">
+        x:Class="CrosshairOverlay.MainWindow"
+        Background="Transparent">
     <Grid Background="Transparent">
         <local:CrosshairControl x:Name="Crosshair" />
     </Grid>

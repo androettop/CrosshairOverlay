@@ -10,16 +10,21 @@ public partial class MainWindow : Window
 {
     private readonly IWindowsOverlayPlatformService _platformService;
     private readonly OverlaySettingsStore _settingsStore;
+    private readonly PixelRect _monitorBounds;
 
     public MainWindow()
-        : this(new OverlaySettingsStore(new SettingsService()), new WindowsOverlayPlatformService())
+        : this(
+            new OverlaySettingsStore(new SettingsService()),
+            new WindowsOverlayPlatformService(),
+            new PixelRect(0, 0, 1920, 1080))
     {
     }
 
-    public MainWindow(OverlaySettingsStore settingsStore, IWindowsOverlayPlatformService platformService)
+    public MainWindow(OverlaySettingsStore settingsStore, IWindowsOverlayPlatformService platformService, PixelRect monitorBounds)
     {
         _settingsStore = settingsStore;
         _platformService = platformService;
+        _monitorBounds = monitorBounds;
         InitializeComponent();
 
         ConfigureOverlayWindow();
@@ -38,9 +43,12 @@ public partial class MainWindow : Window
         CanResize = false;
         ShowInTaskbar = false;
         WindowDecorations = Avalonia.Controls.WindowDecorations.None;
-        WindowState = WindowState.FullScreen;
+        Position = new PixelPoint(_monitorBounds.X, _monitorBounds.Y);
+        Width = _monitorBounds.Width;
+        Height = _monitorBounds.Height;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         ExtendClientAreaToDecorationsHint = true;
+        WindowState = WindowState.FullScreen;
     }
 
     private void ApplySettings(OverlaySettings settings)

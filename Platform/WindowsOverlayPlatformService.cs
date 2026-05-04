@@ -12,7 +12,8 @@ public sealed class WindowsOverlayPlatformService : IWindowsOverlayPlatformServi
     private const long WsExLayered = 0x00080000;
     private const long WsExTransparent = 0x00000020;
     private const long WsExToolWindow = 0x00000080;
-    private const long WsExNoActivate = 0x08000000;
+
+    private const int LwaAlpha = 0x2;
 
     public void EnableClickThrough(Window window)
     {
@@ -33,9 +34,9 @@ public sealed class WindowsOverlayPlatformService : IWindowsOverlayPlatformServi
             exStyle |= WsExLayered;
             exStyle |= WsExTransparent;
             exStyle |= WsExToolWindow;
-            exStyle |= WsExNoActivate;
 
             SetWindowLongPtr(handle.Handle, GwlExStyle, new IntPtr(exStyle));
+            SetLayeredWindowAttributes(handle.Handle, 0, 255, LwaAlpha);
         }
         catch
         {
@@ -68,4 +69,8 @@ public sealed class WindowsOverlayPlatformService : IWindowsOverlayPlatformServi
 
     [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
     private static extern IntPtr SetWindowLongPtr64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 }

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace CrosshairOverlay;
 
 public sealed class OverlaySettings
@@ -45,6 +47,10 @@ public sealed class OverlaySettings
     public double CrosshairGap { get; set; } = 10;
 
     public double CrosshairThickness { get; set; } = 2;
+
+    public List<int> EnabledMonitorIndices { get; set; } = [0];
+
+    public string Language { get; set; } = "";
 
     public int MonitorIndex { get; set; } = 0;
 }
