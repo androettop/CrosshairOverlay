@@ -187,7 +187,7 @@ public partial class App : Application
         return string.Join(",", selected.OrderBy(x => x));
     }
 
-    private static WindowIcon? TryCreateTrayIcon()
+    internal static WindowIcon? TryCreateTrayIcon()
     {
         try
         {

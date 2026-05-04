@@ -25,6 +25,7 @@ public partial class ConfigWindow : Window
         _monitorBounds = monitorBounds;
         _isUpdatingUi = true;
         InitializeComponent();
+        Icon = App.TryCreateTrayIcon();
         BuildMonitorSelectors();
 
         _settingsStore.SettingsChanged += OnStoreSettingsChanged;

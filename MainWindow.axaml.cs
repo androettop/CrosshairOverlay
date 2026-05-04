@@ -28,6 +28,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         ConfigureOverlayWindow();
+        Icon = App.TryCreateTrayIcon();
         ApplySettings(_settingsStore.Current);
 
         Opened += OnOpened;
