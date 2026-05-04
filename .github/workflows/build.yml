@@ -10,6 +10,12 @@ jobs:
   build:
     env:
       APP_NAME: CrosshairOverlay
+      APPLE_CERT_BASE64: ${{ secrets.APPLE_CERT_BASE64 }}
+      APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
     strategy:
       fail-fast: false
       matrix:
@@ -100,6 +106,10 @@ jobs:
           </plist>
           EOF
 
+          # Ad-hoc sign so Gatekeeper does not flag as trivially damaged.
+          codesign --force --deep --sign - "${app_dir}"
+          codesign --verify --deep --strict --verbose=2 "${app_dir}"
+
           ditto "${app_dir}" "${dmg_stage_dir}/${APP_NAME}.app"
           ln -s /Applications "${dmg_stage_dir}/Applications"
 
@@ -109,6 +119,63 @@ jobs:
             -ov \
             -format UDZO \
             "${dmg_path}"
+
+          # Also ad-hoc sign the dmg for consistency.
+          codesign --force --sign - "${dmg_path}"
+
+      - name: Import Apple signing certificate
+        if: startsWith(matrix.rid, 'osx-') && env.APPLE_CERT_BASE64 != '' && env.APPLE_SIGNING_IDENTITY != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "${APPLE_CERT_BASE64}" | base64 --decode > apple_cert.p12
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+          security import apple_cert.p12 -k build.keychain -P "${APPLE_CERT_PASSWORD}" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+
+      - name: Sign macOS app and dmg (Developer ID)
+        if: startsWith(matrix.rid, 'osx-') && env.APPLE_CERT_BASE64 != '' && env.APPLE_SIGNING_IDENTITY != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          app_dir="./artifacts/${{ matrix.rid }}/${APP_NAME}.app"
+          dmg_path="./artifacts/${{ matrix.rid }}/${APP_NAME}-${{ matrix.rid }}.dmg"
+
+          codesign --force --deep --options runtime --timestamp --sign "${APPLE_SIGNING_IDENTITY}" "${app_dir}"
+          codesign --verify --deep --strict --verbose=2 "${app_dir}"
+
+          codesign --force --timestamp --sign "${APPLE_SIGNING_IDENTITY}" "${dmg_path}"
+          codesign --verify --verbose=2 "${dmg_path}"
+
+      - name: Notarize and staple dmg
+        if: startsWith(matrix.rid, 'osx-') && env.APPLE_CERT_BASE64 != '' && env.APPLE_SIGNING_IDENTITY != '' && env.APPLE_ID != '' && env.APPLE_APP_PASSWORD != '' && env.APPLE_TEAM_ID != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dmg_path="./artifacts/${{ matrix.rid }}/${APP_NAME}-${{ matrix.rid }}.dmg"
+          app_dir="./artifacts/${{ matrix.rid }}/${APP_NAME}.app"
+
+          xcrun notarytool submit "${dmg_path}" \
+            --apple-id "${APPLE_ID}" \
+            --password "${APPLE_APP_PASSWORD}" \
+            --team-id "${APPLE_TEAM_ID}" \
+            --wait
+
+          xcrun stapler staple "${app_dir}"
+          xcrun stapler staple "${dmg_path}"
+
+      - name: Cleanup macOS signing keychain
+        if: startsWith(matrix.rid, 'osx-') && always()
+        shell: bash
+        run: |
+          security delete-keychain build.keychain || true
+          rm -f apple_cert.p12
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
