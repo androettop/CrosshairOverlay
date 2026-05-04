@@ -25,25 +25,49 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
                 return;
             }
 
-            // On macOS, Avalonia returns the NSView; get its parent NSWindow.
-            var nsView = handle.Handle;
-            var nsWindow = objc_msgSend_ptr(nsView, sel_registerName("window"));
+            var selWindow = sel_registerName("window");
+            var selRespondsToSelector = sel_registerName("respondsToSelector:");
+            var selSetIgnoresMouseEvents = sel_registerName("setIgnoresMouseEvents:");
+            var selSetOpaque = sel_registerName("setOpaque:");
+            var selSetBackgroundColor = sel_registerName("setBackgroundColor:");
+
+            // Avalonia may expose NSView or NSWindow depending on platform backend details.
+            // Calling an unsupported selector crashes, so we probe first.
+            var nativeHandle = handle.Handle;
+            var supportsWindowSelector = objc_msgSend_bool_selector(nativeHandle, selRespondsToSelector, selWindow);
+            var nsWindow = supportsWindowSelector ? objc_msgSend_ptr(nativeHandle, selWindow) : nativeHandle;
+
             if (nsWindow == IntPtr.Zero)
             {
-                // Handle is already an NSWindow (fallback)
-                nsWindow = nsView;
+                return;
             }
 
             // Mouse events pass through the window entirely
-            objc_msgSend_void_bool(nsWindow, sel_registerName("setIgnoresMouseEvents:"), true);
+            if (objc_msgSend_bool_selector(nsWindow, selRespondsToSelector, selSetIgnoresMouseEvents))
+            {
+                objc_msgSend_void_bool(nsWindow, selSetIgnoresMouseEvents, true);
+            }
 
             // Disable window's own opaque background so compositor transparency works
-            objc_msgSend_void_bool(nsWindow, sel_registerName("setOpaque:"), false);
+            if (objc_msgSend_bool_selector(nsWindow, selRespondsToSelector, selSetOpaque))
+            {
+                objc_msgSend_void_bool(nsWindow, selSetOpaque, false);
+            }
 
             // Set the NSWindow background to clear so no black fill leaks through
-            var nsColorClass = objc_getClass("NSColor");
-            var clearColor = objc_msgSend_ptr(nsColorClass, sel_registerName("clearColor"));
-            objc_msgSend_void_ptr(nsWindow, sel_registerName("setBackgroundColor:"), clearColor);
+            if (objc_msgSend_bool_selector(nsWindow, selRespondsToSelector, selSetBackgroundColor))
+            {
+                var nsColorClass = objc_getClass("NSColor");
+                if (nsColorClass != IntPtr.Zero)
+                {
+                    var selClearColor = sel_registerName("clearColor");
+                    var clearColor = objc_msgSend_ptr(nsColorClass, selClearColor);
+                    if (clearColor != IntPtr.Zero)
+                    {
+                        objc_msgSend_void_ptr(nsWindow, selSetBackgroundColor, clearColor);
+                    }
+                }
+            }
         }
         catch
         {
@@ -62,6 +86,10 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
 
     [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
     private static extern void objc_msgSend_void_ptr(IntPtr receiver, IntPtr selector, IntPtr arg);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool objc_msgSend_bool_selector(IntPtr receiver, IntPtr selector, IntPtr arg);
 
     [DllImport("/usr/lib/libobjc.dylib")]
     private static extern IntPtr objc_getClass([MarshalAs(UnmanagedType.LPStr)] string name);
