@@ -5,6 +5,8 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  release:
+    types: [ published ]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -31,7 +33,7 @@ jobs:
           - os: ubuntu-latest
             rid: linux-x64
             artifact: CrosshairOverlay-linux-x64
-            artifact_path: ./publish/linux-x64
+            artifact_path: ./artifacts/linux-x64/CrosshairOverlay-linux-x64.tar.gz
           - os: macos-latest
             rid: osx-x64
             artifact: CrosshairOverlay-osx-x64
@@ -40,6 +42,9 @@ jobs:
             rid: osx-arm64
             artifact: CrosshairOverlay-osx-arm64
             artifact_path: ./artifacts/osx-arm64/CrosshairOverlay-osx-arm64.dmg
+
+    permissions:
+      contents: write
 
     runs-on: ${{ matrix.os }}
 
@@ -57,6 +62,11 @@ jobs:
 
       - name: Publish
         run: dotnet publish ./CrosshairOverlay.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o ./publish/${{ matrix.rid }}
+
+      - name: Package Linux tarball
+        if: matrix.rid == 'linux-x64'
+        shell: bash
+        run: bash ./.github/scripts/package-linux.sh "${{ matrix.rid }}"
 
       - name: Package Windows installer (EXE)
         if: matrix.rid == 'win-x64'
@@ -97,3 +107,9 @@ jobs:
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact_path }}
+
+      - name: Upload to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" "${{ matrix.artifact_path }}" --clobber
