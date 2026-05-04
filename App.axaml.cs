@@ -25,8 +25,6 @@ public partial class App : Application
     private string _lastMonitorSelectionKey = string.Empty;
     private NativeMenuItem? _openSettingsItem;
     private NativeMenuItem? _exitItem;
-    private NativeMenuItem? _appOpenSettingsItem;
-    private NativeMenuItem? _appExitItem;
     private TrayIcon? _trayIcon;
 
     public override void Initialize()
@@ -45,7 +43,6 @@ public partial class App : Application
             _settingsStore = new OverlaySettingsStore(settingsService);
             _settingsStore.SettingsChanged += OnSettingsChanged;
 
-            CreateNativeAppMenu();
             CreateTrayIcon();
             RebuildOverlayWindows(_settingsStore.Current);
         }
@@ -97,37 +94,14 @@ public partial class App : Application
         UpdateTrayLocalization(_settingsStore.Current.Language);
     }
 
-    private void CreateNativeAppMenu()
+    private void AppMenuSettings_OnClick(object? sender, EventArgs e)
     {
-        if (!OperatingSystem.IsMacOS())
-        {
-            return;
-        }
+        OpenOrFocusConfigWindow();
+    }
 
-        _appOpenSettingsItem = new NativeMenuItem("Settings");
-        _appOpenSettingsItem.Click += (_, _) => OpenOrFocusConfigWindow();
-
-        _appExitItem = new NativeMenuItem("Exit");
-        _appExitItem.Click += (_, _) => _desktop?.Shutdown();
-
-        var appSubMenu = new NativeMenu
-        {
-            _appOpenSettingsItem,
-            new NativeMenuItemSeparator(),
-            _appExitItem
-        };
-
-        var appMenuRoot = new NativeMenuItem("Crosshair Overlay")
-        {
-            Menu = appSubMenu
-        };
-
-        var appMenu = new NativeMenu
-        {
-            appMenuRoot
-        };
-
-        NativeDock.SetMenu(this, appMenu);
+    private void AppMenuExit_OnClick(object? sender, EventArgs e)
+    {
+        _desktop?.Shutdown();
     }
 
     private void OpenOrFocusConfigWindow()
@@ -212,16 +186,6 @@ public partial class App : Application
         if (_exitItem is not null)
         {
             _exitItem.Header = isSpanish ? "Salir" : "Exit";
-        }
-
-        if (_appOpenSettingsItem is not null)
-        {
-            _appOpenSettingsItem.Header = isSpanish ? "Ajustes" : "Settings";
-        }
-
-        if (_appExitItem is not null)
-        {
-            _appExitItem.Header = isSpanish ? "Salir" : "Exit";
         }
 
         if (_trayIcon is not null)

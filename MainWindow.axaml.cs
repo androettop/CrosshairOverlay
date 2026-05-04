@@ -50,11 +50,7 @@ public partial class MainWindow : Window
         Height = _monitorBounds.Height;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         ExtendClientAreaToDecorationsHint = true;
-        // On macOS we also need fullscreen so the overlay covers menu bar + dock.
-        // This keeps the crosshair centered on the full monitor, not only work area.
-        WindowState = (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
-            ? WindowState.FullScreen
-            : WindowState.Normal;
+        WindowState = OperatingSystem.IsWindows() ? WindowState.FullScreen : WindowState.Normal;
     }
 
     private void ApplySettings(OverlaySettings settings)

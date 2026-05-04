@@ -5,6 +5,18 @@
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
+    <NativeMenu.Menu>
+        <NativeMenu>
+            <NativeMenuItem Header="Crosshair Overlay">
+                <NativeMenu>
+                    <NativeMenuItem Header="Settings" Click="AppMenuSettings_OnClick" />
+                    <NativeMenuItemSeparator />
+                    <NativeMenuItem Header="Exit" Click="AppMenuExit_OnClick" />
+                </NativeMenu>
+            </NativeMenuItem>
+        </NativeMenu>
+    </NativeMenu.Menu>
+
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>

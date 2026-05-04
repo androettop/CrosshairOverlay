@@ -40,7 +40,8 @@ class Program
             .UsePlatformDetect()
             .With(new MacOSPlatformOptions
             {
-                DisableDefaultApplicationMenuItems = true
+                DisableDefaultApplicationMenuItems = true,
+                DisableSetProcessName = true
             })
 #if DEBUG
             .WithDeveloperTools()

@@ -30,6 +30,9 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
             var selSetIgnoresMouseEvents = sel_registerName("setIgnoresMouseEvents:");
             var selSetOpaque = sel_registerName("setOpaque:");
             var selSetBackgroundColor = sel_registerName("setBackgroundColor:");
+            var selScreen = sel_registerName("screen");
+            var selFrame = sel_registerName("frame");
+            var selSetFrameDisplay = sel_registerName("setFrame:display:");
 
             // Avalonia may expose NSView or NSWindow depending on platform backend details.
             // Calling an unsupported selector crashes, so we probe first.
@@ -40,6 +43,19 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
             if (nsWindow == IntPtr.Zero)
             {
                 return;
+            }
+
+            // Force the window to occupy the whole display frame (not visibleFrame)
+            // so the overlay remains vertically centered relative to the full screen.
+            if (objc_msgSend_bool_selector(nsWindow, selRespondsToSelector, selScreen) &&
+                objc_msgSend_bool_selector(nsWindow, selRespondsToSelector, selSetFrameDisplay))
+            {
+                var nsScreen = objc_msgSend_ptr(nsWindow, selScreen);
+                if (nsScreen != IntPtr.Zero && objc_msgSend_bool_selector(nsScreen, selRespondsToSelector, selFrame))
+                {
+                    var fullFrame = objc_msgSend_rect(nsScreen, selFrame);
+                    objc_msgSend_void_rect_bool(nsWindow, selSetFrameDisplay, fullFrame, true);
+                }
             }
 
             // Mouse events pass through the window entirely
@@ -88,6 +104,16 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
     private static extern void objc_msgSend_void_ptr(IntPtr receiver, IntPtr selector, IntPtr arg);
 
     [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern NSRect objc_msgSend_rect(IntPtr receiver, IntPtr selector);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void objc_msgSend_void_rect_bool(
+        IntPtr receiver,
+        IntPtr selector,
+        NSRect rect,
+        [MarshalAs(UnmanagedType.I1)] bool arg);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
     [return: MarshalAs(UnmanagedType.I1)]
     private static extern bool objc_msgSend_bool_selector(IntPtr receiver, IntPtr selector, IntPtr arg);
 
@@ -96,4 +122,13 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
 
     [DllImport("/usr/lib/libobjc.dylib")]
     private static extern IntPtr sel_registerName([MarshalAs(UnmanagedType.LPStr)] string name);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NSRect
+    {
+        public double X;
+        public double Y;
+        public double Width;
+        public double Height;
+    }
 }
