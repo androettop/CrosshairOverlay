@@ -12,20 +12,29 @@ An always-on-top transparent crosshair for Windows and macOS that helps **reduce
 - Live settings panel via system tray icon
 - Settings saved automatically
 
-## Requirements
+## Download & Install
 
-[.NET 10 Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) — Windows 10/11 and macOS supported.
+Go to the [**latest release**](https://github.com/androettop/CrosshairOverlay/releases/latest) and download the installer for your platform:
+
+| Platform | File | Notes |
+|---|---|---|
+| Windows 10/11 | `CrosshairOverlay-win-x64-setup.exe` | Run the installer — no extra dependencies needed |
+| macOS (Intel) | `CrosshairOverlay-osx-x64.dmg` | Open the DMG and drag the app to Applications |
+| macOS (Apple Silicon) | `CrosshairOverlay-osx-arm64.dmg` | Open the DMG and drag the app to Applications |
+| Linux x64 | `CrosshairOverlay-linux-x64.tar.gz` | Extract and run the binary — **untested, not guaranteed to work** |
+
+> **macOS:** On first launch, macOS may show a security warning. Go to **System Settings → Privacy & Security** and click *Open Anyway*.
 
 ## Usage
 
-Run `CrosshairOverlay.exe` (Windows) or `./CrosshairOverlay` (macOS). Right-click the tray icon to open Settings.
+Run `CrosshairOverlay.exe` (Windows) or open `CrosshairOverlay.app` (macOS). Right-click the tray icon to open Settings.
 
 Press `Esc` to close the overlay.
 
 ## Build from Source
 
 ```bash
-git clone https://github.com/your-username/CrosshairOverlay.git
+git clone https://github.com/androettop/CrosshairOverlay.git
 cd CrosshairOverlay
 dotnet run
 ```
