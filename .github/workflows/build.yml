@@ -45,10 +45,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '10.0.x'
 
@@ -61,234 +61,39 @@ jobs:
       - name: Package Windows installer (EXE)
         if: matrix.rid == 'win-x64'
         shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-
-          $publishDir = (Resolve-Path "./publish/${{ matrix.rid }}").Path
-          $artifactDir = Join-Path (Resolve-Path ".").Path "artifacts/${{ matrix.rid }}"
-          $outputBaseName = "${{ env.APP_NAME }}-${{ matrix.rid }}-setup"
-          $appVersion = "1.0.${{ github.run_number }}.${{ github.run_attempt }}"
-
-          New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
-
-          $issPath = Join-Path $artifactDir "installer.iss"
-          $issContent = @"
-#define MyAppName "${{ env.APP_DISPLAY_NAME }}"
-#define MyAppVersion "${appVersion}"
-#define MyAppPublisher "${{ env.APP_DISPLAY_NAME }}"
-#define MyAppExeName "${{ env.APP_NAME }}.exe"
-#define MyOutputDir "$(($artifactDir -replace '\\','\\\\'))"
-#define MyOutputBaseName "${outputBaseName}"
-#define MySourceDir "$(($publishDir -replace '\\','\\\\'))"
-
-[Setup]
-AppId={{B4868CFE-4E64-4A7C-9FB1-D33479C55423}
-AppName={#MyAppName}
-AppVersion={#MyAppVersion}
-AppPublisher={#MyAppPublisher}
-DefaultDirName={autopf}\{#MyAppName}
-DisableProgramGroupPage=yes
-OutputDir={#MyOutputDir}
-OutputBaseFilename={#MyOutputBaseName}
-Compression=lzma
-SolidCompression=yes
-WizardStyle=modern
-ArchitecturesInstallIn64BitMode=x64compatible
-PrivilegesRequired=admin
-UninstallDisplayIcon={app}\{#MyAppExeName}
-
-[Languages]
-Name: "english"; MessagesFile: "compiler:Default.isl"
-
-[Tasks]
-Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Additional icons:"; Flags: unchecked
-
-[Files]
-Source: "{#MySourceDir}\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-
-[Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-
-[Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
-"@
-
-          Set-Content -Path $issPath -Value $issContent -Encoding UTF8
-
-          $isccCandidates = @(
-            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-            "C:\Program Files\Inno Setup 6\ISCC.exe"
-          )
-          $iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-
-          if (-not $iscc) {
-            choco install innosetup --yes --no-progress
-            $iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-          }
-
-          if (-not $iscc) {
-            throw "ISCC.exe not found after installing Inno Setup"
-          }
-
-          & $iscc $issPath
-          if ($LASTEXITCODE -ne 0) {
-            throw "Inno Setup compiler failed with exit code $LASTEXITCODE"
-          }
-
-          $installerPath = Join-Path $artifactDir "${outputBaseName}.exe"
-          if (-not (Test-Path $installerPath)) {
-            throw "Expected installer was not generated: $installerPath"
-          }
+        run: >-
+          ./.github/scripts/package-windows-installer.ps1
+          -Rid "${{ matrix.rid }}"
+          -RunNumber "${{ github.run_number }}"
+          -RunAttempt "${{ github.run_attempt }}"
 
       - name: Package macOS app bundle
         if: startsWith(matrix.rid, 'osx-')
         shell: bash
-        run: |
-          set -euo pipefail
-
-          publish_dir="./publish/${{ matrix.rid }}"
-          artifact_dir="./artifacts/${{ matrix.rid }}"
-          app_dir="${artifact_dir}/${APP_NAME}.app"
-          contents_dir="${app_dir}/Contents"
-          macos_dir="${contents_dir}/MacOS"
-          resources_dir="${contents_dir}/Resources"
-          dmg_stage_dir="${artifact_dir}/dmg"
-          dmg_path="${artifact_dir}/${APP_NAME}-${{ matrix.rid }}.dmg"
-          icon_source="./assets/icon-source.png"
-
-          rm -rf "${artifact_dir}"
-          mkdir -p "${macos_dir}" "${resources_dir}" "${dmg_stage_dir}"
-
-          ditto "${publish_dir}" "${macos_dir}"
-          chmod +x "${macos_dir}/${APP_NAME}"
-
-          # Build a valid macOS icns icon from the shared PNG source.
-          iconset_dir="${artifact_dir}/AppIcon.iconset"
-          rm -rf "${iconset_dir}"
-          mkdir -p "${iconset_dir}"
-
-          sips -z 16 16     "${icon_source}" --out "${iconset_dir}/icon_16x16.png" >/dev/null
-          sips -z 32 32     "${icon_source}" --out "${iconset_dir}/icon_16x16@2x.png" >/dev/null
-          sips -z 32 32     "${icon_source}" --out "${iconset_dir}/icon_32x32.png" >/dev/null
-          sips -z 64 64     "${icon_source}" --out "${iconset_dir}/icon_32x32@2x.png" >/dev/null
-          sips -z 128 128   "${icon_source}" --out "${iconset_dir}/icon_128x128.png" >/dev/null
-          sips -z 256 256   "${icon_source}" --out "${iconset_dir}/icon_128x128@2x.png" >/dev/null
-          sips -z 256 256   "${icon_source}" --out "${iconset_dir}/icon_256x256.png" >/dev/null
-          sips -z 512 512   "${icon_source}" --out "${iconset_dir}/icon_256x256@2x.png" >/dev/null
-          sips -z 512 512   "${icon_source}" --out "${iconset_dir}/icon_512x512.png" >/dev/null
-          sips -z 1024 1024 "${icon_source}" --out "${iconset_dir}/icon_512x512@2x.png" >/dev/null
-
-          iconutil -c icns "${iconset_dir}" -o "${resources_dir}/AppIcon.icns"
-
-          cat > "${contents_dir}/Info.plist" <<EOF
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>CFBundleDevelopmentRegion</key>
-            <string>en</string>
-            <key>CFBundleDisplayName</key>
-            <string>${APP_DISPLAY_NAME}</string>
-            <key>CFBundleExecutable</key>
-            <string>${APP_NAME}</string>
-            <key>CFBundleIdentifier</key>
-            <string>com.crosshairoverlay.app</string>
-            <key>CFBundleInfoDictionaryVersion</key>
-            <string>6.0</string>
-            <key>CFBundleIconFile</key>
-            <string>AppIcon</string>
-            <key>CFBundleIconName</key>
-            <string>AppIcon</string>
-            <key>CFBundleName</key>
-            <string>${APP_DISPLAY_NAME}</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleShortVersionString</key>
-            <string>${{ github.run_number }}</string>
-            <key>CFBundleVersion</key>
-            <string>${{ github.run_number }}</string>
-            <key>LSMinimumSystemVersion</key>
-            <string>12.0</string>
-            <key>NSHighResolutionCapable</key>
-            <true/>
-          </dict>
-          </plist>
-          EOF
-
-          # Ad-hoc sign so Gatekeeper does not flag as trivially damaged.
-          codesign --force --deep --sign - "${app_dir}"
-          codesign --verify --deep --strict --verbose=2 "${app_dir}"
-
-          ditto "${app_dir}" "${dmg_stage_dir}/${APP_NAME}.app"
-          ln -s /Applications "${dmg_stage_dir}/Applications"
-
-          hdiutil create \
-            -volname "${APP_NAME}" \
-            -srcfolder "${dmg_stage_dir}" \
-            -ov \
-            -format UDZO \
-            "${dmg_path}"
-
-          # Also ad-hoc sign the dmg for consistency.
-          codesign --force --sign - "${dmg_path}"
+        run: bash ./.github/scripts/package-macos.sh "${{ matrix.rid }}"
 
       - name: Import Apple signing certificate
         if: startsWith(matrix.rid, 'osx-') && env.APPLE_CERT_BASE64 != '' && env.APPLE_SIGNING_IDENTITY != ''
         shell: bash
-        run: |
-          set -euo pipefail
-
-          echo "${APPLE_CERT_BASE64}" | base64 --decode > apple_cert.p12
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security set-keychain-settings -lut 21600 build.keychain
-          security import apple_cert.p12 -k build.keychain -P "${APPLE_CERT_PASSWORD}" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        run: bash ./.github/scripts/macos-import-cert.sh
 
       - name: Sign macOS app and dmg (Developer ID)
         if: startsWith(matrix.rid, 'osx-') && env.APPLE_CERT_BASE64 != '' && env.APPLE_SIGNING_IDENTITY != ''
         shell: bash
-        run: |
-          set -euo pipefail
-
-          app_dir="./artifacts/${{ matrix.rid }}/${APP_NAME}.app"
-          dmg_path="./artifacts/${{ matrix.rid }}/${APP_NAME}-${{ matrix.rid }}.dmg"
-
-          codesign --force --deep --options runtime --timestamp --sign "${APPLE_SIGNING_IDENTITY}" "${app_dir}"
-          codesign --verify --deep --strict --verbose=2 "${app_dir}"
-
-          codesign --force --timestamp --sign "${APPLE_SIGNING_IDENTITY}" "${dmg_path}"
-          codesign --verify --verbose=2 "${dmg_path}"
+        run: bash ./.github/scripts/macos-sign.sh "${{ matrix.rid }}"
 
       - name: Notarize and staple dmg
         if: startsWith(matrix.rid, 'osx-') && env.APPLE_CERT_BASE64 != '' && env.APPLE_SIGNING_IDENTITY != '' && env.APPLE_ID != '' && env.APPLE_APP_PASSWORD != '' && env.APPLE_TEAM_ID != ''
         shell: bash
-        run: |
-          set -euo pipefail
-
-          dmg_path="./artifacts/${{ matrix.rid }}/${APP_NAME}-${{ matrix.rid }}.dmg"
-          app_dir="./artifacts/${{ matrix.rid }}/${APP_NAME}.app"
-
-          xcrun notarytool submit "${dmg_path}" \
-            --apple-id "${APPLE_ID}" \
-            --password "${APPLE_APP_PASSWORD}" \
-            --team-id "${APPLE_TEAM_ID}" \
-            --wait
-
-          xcrun stapler staple "${app_dir}"
-          xcrun stapler staple "${dmg_path}"
+        run: bash ./.github/scripts/macos-notarize.sh "${{ matrix.rid }}"
 
       - name: Cleanup macOS signing keychain
         if: startsWith(matrix.rid, 'osx-') && always()
         shell: bash
-        run: |
-          security delete-keychain build.keychain || true
-          rm -f apple_cert.p12
+        run: bash ./.github/scripts/macos-cleanup.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact_path }}
