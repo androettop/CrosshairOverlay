@@ -67,8 +67,14 @@ jobs:
             VERSION="${{ github.ref_name }}"
             VERSION="${VERSION#v}"
           else
-            VERSION=$(grep -oP '(?<=<Version>)[^<]+' CrosshairOverlay.csproj)
+            VERSION=$(sed -n 's/.*<Version>\([^<]*\)<\/Version>.*/\1/p' CrosshairOverlay.csproj | head -n 1)
           fi
+
+          if [ -z "${VERSION}" ]; then
+            echo "Could not resolve app version from tag or CrosshairOverlay.csproj"
+            exit 1
+          fi
+
           echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
 
       - name: Publish
