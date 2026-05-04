@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     env:
@@ -52,7 +55,7 @@ jobs:
         run: dotnet restore
 
       - name: Publish
-        run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -o ./publish/${{ matrix.rid }}
+        run: dotnet publish ./CrosshairOverlay.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o ./publish/${{ matrix.rid }}
 
       - name: Package macOS app bundle
         if: startsWith(matrix.rid, 'osx-')
