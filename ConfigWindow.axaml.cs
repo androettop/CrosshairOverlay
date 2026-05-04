@@ -1,28 +1,28 @@
 using System;
 using System.Collections.Generic;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 
 namespace CrosshairOverlay;
 
 public partial class ConfigWindow : Window
 {
     private readonly OverlaySettingsStore _settingsStore;
-    private readonly IReadOnlyList<string> _monitorNames;
+    private readonly IReadOnlyList<PixelRect> _monitorBounds;
     private readonly List<CheckBox> _monitorCheckBoxes = [];
     private bool _isUpdatingUi;
     private bool _isInitialized;
 
     public ConfigWindow()
-        : this(new OverlaySettingsStore(new SettingsService()), ["Monitor 1"])
+        : this(new OverlaySettingsStore(new SettingsService()), [new PixelRect(0, 0, 1920, 1080)])
     {
     }
 
-    public ConfigWindow(OverlaySettingsStore settingsStore, IReadOnlyList<string> monitorNames)
+    public ConfigWindow(OverlaySettingsStore settingsStore, IReadOnlyList<PixelRect> monitorBounds)
     {
         _settingsStore = settingsStore;
-        _monitorNames = monitorNames;
+        _monitorBounds = monitorBounds;
         _isUpdatingUi = true;
         InitializeComponent();
         BuildMonitorSelectors();
@@ -50,7 +50,6 @@ public partial class ConfigWindow : Window
         _isUpdatingUi = true;
 
         Language.SelectedIndex = string.Equals(settings.Language, "es", StringComparison.OrdinalIgnoreCase) ? 0 : 1;
-        Title = Language.SelectedIndex == 0 ? "Ajustes de Crosshair Overlay" : "Crosshair Overlay Settings";
 
         EnableCenterDot.IsChecked = settings.EnableCenterDot;
         CenterDotShape.SelectedIndex = ToShapeIndex(settings.CenterDotShape);
@@ -83,6 +82,7 @@ public partial class ConfigWindow : Window
             _monitorCheckBoxes[i].IsChecked = enabledMonitors.Contains(i);
         }
 
+        ApplyLocalization();
         UpdateLabels();
         UpdateDotGridAreaEditors();
 
@@ -107,6 +107,7 @@ public partial class ConfigWindow : Window
             return;
         }
 
+        ApplyLocalization();
         UpdateLabels();
 
         _settingsStore.Update(settings =>
@@ -139,8 +140,6 @@ public partial class ConfigWindow : Window
 
             settings.EnabledMonitorIndices = GetSelectedMonitorIndices();
         });
-
-        Title = Language.SelectedIndex == 0 ? "Ajustes de Crosshair Overlay" : "Crosshair Overlay Settings";
     }
 
     private void BuildMonitorSelectors()
@@ -148,17 +147,15 @@ public partial class ConfigWindow : Window
         MonitorSelectorPanel.Children.Clear();
         _monitorCheckBoxes.Clear();
 
-        for (var i = 0; i < _monitorNames.Count; i++)
+        for (var i = 0; i < _monitorBounds.Count; i++)
         {
-            var checkBox = new CheckBox
-            {
-                Content = _monitorNames[i],
-                Foreground = Brushes.White
-            };
+            var checkBox = new CheckBox();
             checkBox.IsCheckedChanged += OnAnySettingChanged;
             _monitorCheckBoxes.Add(checkBox);
             MonitorSelectorPanel.Children.Add(checkBox);
         }
+
+        ApplyLocalization();
     }
 
     private List<int> GetSelectedMonitorIndices()
@@ -177,22 +174,130 @@ public partial class ConfigWindow : Window
 
     private void UpdateLabels()
     {
-        CenterDotSizeLabel.Text = $"Size: {CenterDotSize.Value:0}";
-        CenterDotOpacityLabel.Text = $"Opacity: {CenterDotOpacity.Value:0.00}";
+        CenterDotSizeLabel.Text = $"{L("Size")}: {CenterDotSize.Value:0}";
+        CenterDotOpacityLabel.Text = $"{L("Opacity")}: {CenterDotOpacity.Value:0.00}";
 
-        DotGridPointSizeLabel.Text = $"Point size: {DotGridPointSize.Value:0}";
-        DotGridSpacingLabel.Text = $"Point spacing: {DotGridSpacing.Value:0}";
-        DotGridRowsLabel.Text = $"Rows: {DotGridRows.Value:0}";
-        DotGridColumnsLabel.Text = $"Columns: {DotGridColumns.Value:0}";
-        DotGridRadiusPointsLabel.Text = $"Radius points: {DotGridRadiusPoints.Value:0}";
-        DotGridOpacityLabel.Text = $"Opacity: {DotGridOpacity.Value:0.00}";
+        DotGridPointSizeLabel.Text = $"{L("PointSize")}: {DotGridPointSize.Value:0}";
+        DotGridSpacingLabel.Text = $"{L("PointSpacing")}: {DotGridSpacing.Value:0}";
+        DotGridRowsLabel.Text = $"{L("Rows")}: {DotGridRows.Value:0}";
+        DotGridColumnsLabel.Text = $"{L("Columns")}: {DotGridColumns.Value:0}";
+        DotGridRadiusPointsLabel.Text = $"{L("RadiusPoints")}: {DotGridRadiusPoints.Value:0}";
+        DotGridOpacityLabel.Text = $"{L("Opacity")}: {DotGridOpacity.Value:0.00}";
 
-        CrosshairHorizontalLengthLabel.Text = $"Horizontal length: {CrosshairHorizontalLength.Value:0}";
-        CrosshairVerticalLengthLabel.Text = $"Vertical length: {CrosshairVerticalLength.Value:0}";
-        CrosshairGapLabel.Text = $"Gap: {CrosshairGap.Value:0}";
-        CrosshairThicknessLabel.Text = $"Thickness: {CrosshairThickness.Value:0}";
-        CrosshairOpacityLabel.Text = $"Opacity: {CrosshairOpacity.Value:0.00}";
+        CrosshairHorizontalLengthLabel.Text = $"{L("HorizontalLength")}: {CrosshairHorizontalLength.Value:0}";
+        CrosshairVerticalLengthLabel.Text = $"{L("VerticalLength")}: {CrosshairVerticalLength.Value:0}";
+        CrosshairGapLabel.Text = $"{L("Gap")}: {CrosshairGap.Value:0}";
+        CrosshairThicknessLabel.Text = $"{L("Thickness")}: {CrosshairThickness.Value:0}";
+        CrosshairOpacityLabel.Text = $"{L("Opacity")}: {CrosshairOpacity.Value:0.00}";
     }
+
+    private void ApplyLocalization()
+    {
+        Title = L("WindowTitle");
+        HeaderTitle.Text = L("HeaderTitle");
+        GeneralTitle.Text = L("General");
+        LanguageLabel.Text = L("Language");
+        MonitorsLabel.Text = L("Monitors");
+        LanguageSpanishItem.Content = "Español";
+        LanguageEnglishItem.Content = "English";
+
+        CenterDotTitle.Text = L("CenterDot");
+        EnableCenterDot.Content = L("EnableCenterDot");
+        CenterDotShapeLabel.Text = L("Shape");
+        CenterDotShapeCircleItem.Content = L("Circle");
+        CenterDotShapeSquareItem.Content = L("Square");
+        CenterDotColorLabel.Text = L("ColorFormat");
+
+        DotGridTitle.Text = L("DotGrid");
+        EnableDotGrid.Content = L("EnableDotGrid");
+        DotGridPointShapeLabel.Text = L("PointShape");
+        DotGridPointShapeCircleItem.Content = L("Circle");
+        DotGridPointShapeSquareItem.Content = L("Square");
+        DotGridAreaShapeLabel.Text = L("GridAreaShape");
+        DotGridAreaSquareItem.Content = L("Square");
+        DotGridAreaCircleItem.Content = L("Circle");
+        DotGridColorLabel.Text = L("ColorFormat");
+
+        CrosshairTitle.Text = L("Crosshair");
+        EnableCrosshair.Content = L("EnableCrosshair");
+        CrosshairColorLabel.Text = L("ColorFormat");
+
+        for (var i = 0; i < _monitorCheckBoxes.Count; i++)
+        {
+            var bounds = _monitorBounds[i];
+            _monitorCheckBoxes[i].Content = $"{L("Monitor")} {i + 1} ({bounds.Width}x{bounds.Height})";
+        }
+    }
+
+    private string L(string key)
+    {
+        return (IsSpanish, key) switch
+        {
+            (true, "WindowTitle") => "Ajustes de Crosshair Overlay",
+            (true, "HeaderTitle") => "Ajustes de Overlay",
+            (true, "General") => "General",
+            (true, "Language") => "Idioma",
+            (true, "Monitors") => "Monitores",
+            (true, "CenterDot") => "Punto central",
+            (true, "EnableCenterDot") => "Activar punto central",
+            (true, "Shape") => "Forma",
+            (true, "Circle") => "Circulo",
+            (true, "Square") => "Cuadrado",
+            (true, "ColorFormat") => "Color (#RRGGBB o #AARRGGBB)",
+            (true, "DotGrid") => "Grilla de puntos",
+            (true, "EnableDotGrid") => "Activar grilla de puntos",
+            (true, "PointShape") => "Forma del punto",
+            (true, "GridAreaShape") => "Forma del area de la grilla",
+            (true, "Crosshair") => "Mira",
+            (true, "EnableCrosshair") => "Activar mira",
+            (true, "Size") => "Tamano",
+            (true, "Opacity") => "Opacidad",
+            (true, "PointSize") => "Tamano del punto",
+            (true, "PointSpacing") => "Espaciado entre puntos",
+            (true, "Rows") => "Filas",
+            (true, "Columns") => "Columnas",
+            (true, "RadiusPoints") => "Puntos de radio",
+            (true, "HorizontalLength") => "Largo horizontal",
+            (true, "VerticalLength") => "Largo vertical",
+            (true, "Gap") => "Separacion",
+            (true, "Thickness") => "Grosor",
+            (true, "Monitor") => "Monitor",
+
+            (false, "WindowTitle") => "Crosshair Overlay Settings",
+            (false, "HeaderTitle") => "Overlay Settings",
+            (false, "General") => "General",
+            (false, "Language") => "Language",
+            (false, "Monitors") => "Monitors",
+            (false, "CenterDot") => "Center Dot",
+            (false, "EnableCenterDot") => "Enable center dot",
+            (false, "Shape") => "Shape",
+            (false, "Circle") => "Circle",
+            (false, "Square") => "Square",
+            (false, "ColorFormat") => "Color (#RRGGBB or #AARRGGBB)",
+            (false, "DotGrid") => "Dot Grid",
+            (false, "EnableDotGrid") => "Enable dot grid",
+            (false, "PointShape") => "Point shape",
+            (false, "GridAreaShape") => "Grid area shape",
+            (false, "Crosshair") => "Crosshair",
+            (false, "EnableCrosshair") => "Enable crosshair",
+            (false, "Size") => "Size",
+            (false, "Opacity") => "Opacity",
+            (false, "PointSize") => "Point size",
+            (false, "PointSpacing") => "Point spacing",
+            (false, "Rows") => "Rows",
+            (false, "Columns") => "Columns",
+            (false, "RadiusPoints") => "Radius points",
+            (false, "HorizontalLength") => "Horizontal length",
+            (false, "VerticalLength") => "Vertical length",
+            (false, "Gap") => "Gap",
+            (false, "Thickness") => "Thickness",
+            (false, "Monitor") => "Monitor",
+
+            _ => key
+        };
+    }
+
+    private bool IsSpanish => Language.SelectedIndex == 0;
 
     private void UpdateDotGridAreaEditors()
     {

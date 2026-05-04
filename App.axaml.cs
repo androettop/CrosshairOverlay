@@ -20,6 +20,9 @@ public partial class App : Application
     private readonly List<MainWindow> _overlayWindows = [];
     private ConfigWindow? _configWindow;
     private string _lastMonitorSelectionKey = string.Empty;
+    private NativeMenuItem? _openSettingsItem;
+    private NativeMenuItem? _exitItem;
+    private TrayIcon? _trayIcon;
 
     public override void Initialize()
     {
@@ -51,20 +54,20 @@ public partial class App : Application
             return;
         }
 
-        var openSettingsItem = new NativeMenuItem("Ajustes");
-        openSettingsItem.Click += (_, _) => OpenOrFocusConfigWindow();
+        _openSettingsItem = new NativeMenuItem("Ajustes");
+        _openSettingsItem.Click += (_, _) => OpenOrFocusConfigWindow();
 
-        var exitItem = new NativeMenuItem("Exit");
-        exitItem.Click += (_, _) => _desktop?.Shutdown();
+        _exitItem = new NativeMenuItem("Exit");
+        _exitItem.Click += (_, _) => _desktop?.Shutdown();
 
         var menu = new NativeMenu
         {
-            openSettingsItem,
+            _openSettingsItem,
             new NativeMenuItemSeparator(),
-            exitItem
+            _exitItem
         };
 
-        var trayIcon = new TrayIcon
+        _trayIcon = new TrayIcon
         {
             ToolTipText = "Crosshair Overlay",
             Menu = menu,
@@ -74,17 +77,18 @@ public partial class App : Application
         var icon = TryCreateTrayIcon();
         if (icon is not null)
         {
-            trayIcon.Icon = icon;
+            _trayIcon.Icon = icon;
         }
 
-        trayIcon.Clicked += (_, _) => OpenOrFocusConfigWindow();
+        _trayIcon.Clicked += (_, _) => OpenOrFocusConfigWindow();
 
         var icons = new TrayIcons
         {
-            trayIcon
+            _trayIcon
         };
 
         TrayIcon.SetIcons(this, icons);
+        UpdateTrayLocalization(_settingsStore.Current.Language);
     }
 
     private void OpenOrFocusConfigWindow()
@@ -96,7 +100,7 @@ public partial class App : Application
 
         if (_configWindow is null)
         {
-            _configWindow = new ConfigWindow(_settingsStore, BuildMonitorNames());
+            _configWindow = new ConfigWindow(_settingsStore, _displayService.GetMonitorBounds());
             _configWindow.Closed += (_, _) => _configWindow = null;
             _configWindow.Show();
             _configWindow.Activate();
@@ -114,6 +118,8 @@ public partial class App : Application
 
     private void OnSettingsChanged(object? sender, OverlaySettings settings)
     {
+        UpdateTrayLocalization(settings.Language);
+
         var selectionKey = BuildMonitorSelectionKey(settings.EnabledMonitorIndices);
         if (!string.Equals(selectionKey, _lastMonitorSelectionKey, StringComparison.Ordinal))
         {
@@ -152,16 +158,23 @@ public partial class App : Application
         _lastMonitorSelectionKey = BuildMonitorSelectionKey(settings.EnabledMonitorIndices);
     }
 
-    private IReadOnlyList<string> BuildMonitorNames()
+    private void UpdateTrayLocalization(string language)
     {
-        var bounds = _displayService.GetMonitorBounds();
-        var names = new List<string>(bounds.Count);
-        for (var i = 0; i < bounds.Count; i++)
+        var isSpanish = string.Equals(language, "es", StringComparison.OrdinalIgnoreCase);
+        if (_openSettingsItem is not null)
         {
-            names.Add($"Monitor {i + 1} ({bounds[i].Width}x{bounds[i].Height})");
+            _openSettingsItem.Header = isSpanish ? "Ajustes" : "Settings";
         }
 
-        return names;
+        if (_exitItem is not null)
+        {
+            _exitItem.Header = isSpanish ? "Salir" : "Exit";
+        }
+
+        if (_trayIcon is not null)
+        {
+            _trayIcon.ToolTipText = isSpanish ? "Overlay de mira" : "Crosshair Overlay";
+        }
     }
 
     private static string BuildMonitorSelectionKey(IReadOnlyList<int>? selected)
