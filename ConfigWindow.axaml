@@ -1,0 +1,108 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        x:Class="CrosshairOverlay.ConfigWindow"
+        Width="720"
+        Height="760"
+        MinWidth="560"
+        MinHeight="620"
+        Title="Crosshair Overlay Settings">
+    <ScrollViewer Margin="12">
+        <StackPanel Spacing="14">
+            <TextBlock Text="Overlay Settings" FontSize="24" FontWeight="Bold" />
+
+            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Center Dot" FontSize="18" FontWeight="SemiBold" />
+                    <CheckBox x:Name="EnableCenterDot" Content="Enable center dot" IsCheckedChanged="OnAnySettingChanged" />
+
+                    <TextBlock Text="Shape" />
+                    <ComboBox x:Name="CenterDotShape" SelectedIndex="0" SelectionChanged="OnAnySettingChanged">
+                        <ComboBoxItem Content="Circle" />
+                        <ComboBoxItem Content="Square" />
+                    </ComboBox>
+
+                    <TextBlock x:Name="CenterDotSizeLabel" Text="Size: 6" />
+                    <Slider x:Name="CenterDotSize" Minimum="1" Maximum="64" Value="6" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="CenterDotOpacityLabel" Text="Opacity: 1.00" />
+                    <Slider x:Name="CenterDotOpacity" Minimum="0" Maximum="1" Value="1" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock Text="Color (#RRGGBB or #AARRGGBB)" />
+                    <TextBox x:Name="CenterDotColor" Text="#FFFFFF" PlaceholderText="#FFFFFF" TextChanged="OnAnySettingChanged" />
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Dot Grid" FontSize="18" FontWeight="SemiBold" />
+                    <CheckBox x:Name="EnableDotGrid" Content="Enable dot grid" IsCheckedChanged="OnAnySettingChanged" />
+
+                    <TextBlock Text="Point shape" />
+                    <ComboBox x:Name="DotGridPointShape" SelectedIndex="0" SelectionChanged="OnAnySettingChanged">
+                        <ComboBoxItem Content="Circle" />
+                        <ComboBoxItem Content="Square" />
+                    </ComboBox>
+
+                    <TextBlock Text="Grid area shape" />
+                    <ComboBox x:Name="DotGridAreaShape" SelectedIndex="0" SelectionChanged="OnDotGridAreaShapeChanged">
+                        <ComboBoxItem Content="Square" />
+                        <ComboBoxItem Content="Circle" />
+                    </ComboBox>
+
+                    <TextBlock x:Name="DotGridPointSizeLabel" Text="Point size: 3" />
+                    <Slider x:Name="DotGridPointSize" Minimum="1" Maximum="32" Value="3" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="DotGridSpacingLabel" Text="Point spacing: 10" />
+                    <Slider x:Name="DotGridSpacing" Minimum="1" Maximum="40" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <StackPanel x:Name="DotGridSquarePanel" Spacing="8">
+                        <TextBlock x:Name="DotGridRowsLabel" Text="Rows: 7" />
+                        <Slider x:Name="DotGridRows" Minimum="1" Maximum="25" Value="7" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                        <TextBlock x:Name="DotGridColumnsLabel" Text="Columns: 7" />
+                        <Slider x:Name="DotGridColumns" Minimum="1" Maximum="25" Value="7" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                    </StackPanel>
+
+                    <StackPanel x:Name="DotGridCirclePanel" Spacing="8">
+                        <TextBlock x:Name="DotGridRadiusPointsLabel" Text="Radius points: 4" />
+                        <Slider x:Name="DotGridRadiusPoints" Minimum="1" Maximum="20" Value="4" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                    </StackPanel>
+
+                    <TextBlock x:Name="DotGridOpacityLabel" Text="Opacity: 0.80" />
+                    <Slider x:Name="DotGridOpacity" Minimum="0" Maximum="1" Value="0.8" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock Text="Color (#RRGGBB or #AARRGGBB)" />
+                    <TextBox x:Name="DotGridColor" Text="#00FF00" PlaceholderText="#00FF00" TextChanged="OnAnySettingChanged" />
+                </StackPanel>
+            </Border>
+
+            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Crosshair" FontSize="18" FontWeight="SemiBold" />
+                    <CheckBox x:Name="EnableCrosshair" Content="Enable crosshair" IsCheckedChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="CrosshairHorizontalLengthLabel" Text="Horizontal length: 16" />
+                    <Slider x:Name="CrosshairHorizontalLength" Minimum="0" Maximum="120" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="CrosshairVerticalLengthLabel" Text="Vertical length: 16" />
+                    <Slider x:Name="CrosshairVerticalLength" Minimum="0" Maximum="120" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="CrosshairGapLabel" Text="Gap: 4" />
+                    <Slider x:Name="CrosshairGap" Minimum="0" Maximum="40" Value="4" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="CrosshairThicknessLabel" Text="Thickness: 2" />
+                    <Slider x:Name="CrosshairThickness" Minimum="1" Maximum="20" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="CrosshairOpacityLabel" Text="Opacity: 0.90" />
+                    <Slider x:Name="CrosshairOpacity" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock Text="Color (#RRGGBB or #AARRGGBB)" />
+                    <TextBox x:Name="CrosshairColor" Text="#FF0000" PlaceholderText="#FF0000" TextChanged="OnAnySettingChanged" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</Window>

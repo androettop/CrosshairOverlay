@@ -34,7 +34,7 @@ public sealed class SettingsService
 
             var json = File.ReadAllText(_settingsPath);
             var settings = JsonSerializer.Deserialize<OverlaySettings>(json, JsonOptions);
-            return settings ?? new OverlaySettings();
+            return Validate(settings ?? new OverlaySettings());
         }
         catch
         {
@@ -50,7 +50,66 @@ public sealed class SettingsService
             Directory.CreateDirectory(directory);
         }
 
-        var json = JsonSerializer.Serialize(settings, JsonOptions);
+        var json = JsonSerializer.Serialize(Validate(settings), JsonOptions);
         File.WriteAllText(_settingsPath, json);
+    }
+
+    private static OverlaySettings Validate(OverlaySettings settings)
+    {
+        settings.CenterDotSize = Math.Max(0, settings.CenterDotSize);
+        settings.CenterDotOpacity = Math.Clamp(settings.CenterDotOpacity, 0, 1);
+
+        settings.DotGridPointSize = Math.Max(0, settings.DotGridPointSize);
+        settings.DotGridOpacity = Math.Clamp(settings.DotGridOpacity, 0, 1);
+        settings.DotGridRows = Math.Max(1, settings.DotGridRows);
+        settings.DotGridColumns = Math.Max(1, settings.DotGridColumns);
+        settings.DotGridRadiusPoints = Math.Max(1, settings.DotGridRadiusPoints);
+        settings.DotGridSpacing = Math.Max(1, settings.DotGridSpacing);
+
+        settings.CrosshairOpacity = Math.Clamp(settings.CrosshairOpacity, 0, 1);
+        settings.CrosshairHorizontalLength = Math.Max(0, settings.CrosshairHorizontalLength);
+        settings.CrosshairVerticalLength = Math.Max(0, settings.CrosshairVerticalLength);
+        settings.CrosshairGap = Math.Max(0, settings.CrosshairGap);
+        settings.CrosshairThickness = Math.Max(1, settings.CrosshairThickness);
+        settings.MonitorIndex = Math.Max(0, settings.MonitorIndex);
+
+        settings.CenterDotShape = NormalizeEnum(settings.CenterDotShape, "Circle", "Square");
+        settings.DotGridPointShape = NormalizeEnum(settings.DotGridPointShape, "Circle", "Square");
+        settings.DotGridAreaShape = NormalizeEnum(settings.DotGridAreaShape, "Square", "Circle");
+
+        if (string.IsNullOrWhiteSpace(settings.CenterDotColor))
+        {
+            settings.CenterDotColor = "#FFFFFF";
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.DotGridColor))
+        {
+            settings.DotGridColor = "#00FF00";
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.CrosshairColor))
+        {
+            settings.CrosshairColor = "#FF0000";
+        }
+
+        return settings;
+    }
+
+    private static string NormalizeEnum(string? value, params string[] allowed)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return allowed[0];
+        }
+
+        foreach (var item in allowed)
+        {
+            if (string.Equals(item, value, StringComparison.OrdinalIgnoreCase))
+            {
+                return item;
+            }
+        }
+
+        return allowed[0];
     }
 }

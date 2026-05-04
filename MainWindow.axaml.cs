@@ -9,22 +9,26 @@ namespace CrosshairOverlay;
 public partial class MainWindow : Window
 {
     private readonly IWindowsOverlayPlatformService _platformService;
+    private readonly OverlaySettingsStore _settingsStore;
 
     public MainWindow()
-        : this(new OverlaySettings(), new WindowsOverlayPlatformService())
+        : this(new OverlaySettingsStore(new SettingsService()), new WindowsOverlayPlatformService())
     {
     }
 
-    public MainWindow(OverlaySettings settings, IWindowsOverlayPlatformService platformService)
+    public MainWindow(OverlaySettingsStore settingsStore, IWindowsOverlayPlatformService platformService)
     {
+        _settingsStore = settingsStore;
         _platformService = platformService;
         InitializeComponent();
 
         ConfigureOverlayWindow();
-        ApplySettings(settings);
+        ApplySettings(_settingsStore.Current);
 
         Opened += OnOpened;
         KeyDown += OnKeyDown;
+        Closed += OnClosed;
+        _settingsStore.SettingsChanged += OnSettingsChanged;
     }
 
     private void ConfigureOverlayWindow()
@@ -41,13 +45,7 @@ public partial class MainWindow : Window
 
     private void ApplySettings(OverlaySettings settings)
     {
-        Crosshair.Color = Color.TryParse(settings.Color, out var parsedColor)
-            ? parsedColor
-            : Colors.Red;
-        Crosshair.OpacityLevel = settings.Opacity;
-        Crosshair.Size = settings.Size;
-        Crosshair.Gap = settings.Gap;
-        Crosshair.Thickness = settings.Thickness;
+        Crosshair.ApplySettings(settings);
     }
 
     private void OnOpened(object? sender, System.EventArgs e)
@@ -61,5 +59,15 @@ public partial class MainWindow : Window
         {
             Close();
         }
+    }
+
+    private void OnSettingsChanged(object? sender, OverlaySettings settings)
+    {
+        ApplySettings(settings);
+    }
+
+    private void OnClosed(object? sender, System.EventArgs e)
+    {
+        _settingsStore.SettingsChanged -= OnSettingsChanged;
     }
 }
