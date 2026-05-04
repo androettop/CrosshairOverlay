@@ -27,7 +27,7 @@ jobs:
           - os: windows-latest
             rid: win-x64
             artifact: CrosshairOverlay-win-x64
-            artifact_path: ./publish/win-x64
+            artifact_path: ./artifacts/win-x64/CrosshairOverlay-win-x64-setup.exe
           - os: ubuntu-latest
             rid: linux-x64
             artifact: CrosshairOverlay-linux-x64
@@ -57,6 +57,89 @@ jobs:
 
       - name: Publish
         run: dotnet publish ./CrosshairOverlay.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o ./publish/${{ matrix.rid }}
+
+      - name: Package Windows installer (EXE)
+        if: matrix.rid == 'win-x64'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $publishDir = (Resolve-Path "./publish/${{ matrix.rid }}").Path
+          $artifactDir = Join-Path (Resolve-Path ".").Path "artifacts/${{ matrix.rid }}"
+          $outputBaseName = "${{ env.APP_NAME }}-${{ matrix.rid }}-setup"
+          $appVersion = "1.0.${{ github.run_number }}.${{ github.run_attempt }}"
+
+          New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null
+
+          $issPath = Join-Path $artifactDir "installer.iss"
+          $issContent = @"
+#define MyAppName "${{ env.APP_DISPLAY_NAME }}"
+#define MyAppVersion "${appVersion}"
+#define MyAppPublisher "${{ env.APP_DISPLAY_NAME }}"
+#define MyAppExeName "${{ env.APP_NAME }}.exe"
+#define MyOutputDir "$(($artifactDir -replace '\\','\\\\'))"
+#define MyOutputBaseName "${outputBaseName}"
+#define MySourceDir "$(($publishDir -replace '\\','\\\\'))"
+
+[Setup]
+AppId={{B4868CFE-4E64-4A7C-9FB1-D33479C55423}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+DefaultDirName={autopf}\{#MyAppName}
+DisableProgramGroupPage=yes
+OutputDir={#MyOutputDir}
+OutputBaseFilename={#MyOutputBaseName}
+Compression=lzma
+SolidCompression=yes
+WizardStyle=modern
+ArchitecturesInstallIn64BitMode=x64compatible
+PrivilegesRequired=admin
+UninstallDisplayIcon={app}\{#MyAppExeName}
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "Create a desktop icon"; GroupDescription: "Additional icons:"; Flags: unchecked
+
+[Files]
+Source: "{#MySourceDir}\\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
+"@
+
+          Set-Content -Path $issPath -Value $issContent -Encoding UTF8
+
+          $isccCandidates = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+          )
+          $iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+          if (-not $iscc) {
+            choco install innosetup --yes --no-progress
+            $iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          }
+
+          if (-not $iscc) {
+            throw "ISCC.exe not found after installing Inno Setup"
+          }
+
+          & $iscc $issPath
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup compiler failed with exit code $LASTEXITCODE"
+          }
+
+          $installerPath = Join-Path $artifactDir "${outputBaseName}.exe"
+          if (-not (Test-Path $installerPath)) {
+            throw "Expected installer was not generated: $installerPath"
+          }
 
       - name: Package macOS app bundle
         if: startsWith(matrix.rid, 'osx-')
