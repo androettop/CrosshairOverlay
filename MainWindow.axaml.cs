@@ -50,10 +50,11 @@ public partial class MainWindow : Window
         Height = _monitorBounds.Height;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         ExtendClientAreaToDecorationsHint = true;
-        // On macOS, WindowState.FullScreen enters the native fullscreen Space
-        // which composites opaquely and breaks transparency. Use Normal + explicit
-        // bounds instead. Linux also benefits from this to avoid Wayland issues.
-        WindowState = OperatingSystem.IsWindows() ? WindowState.FullScreen : WindowState.Normal;
+        // On macOS we also need fullscreen so the overlay covers menu bar + dock.
+        // This keeps the crosshair centered on the full monitor, not only work area.
+        WindowState = (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+            ? WindowState.FullScreen
+            : WindowState.Normal;
     }
 
     private void ApplySettings(OverlaySettings settings)

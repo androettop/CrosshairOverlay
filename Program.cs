@@ -40,8 +40,7 @@ class Program
             .UsePlatformDetect()
             .With(new MacOSPlatformOptions
             {
-                DisableDefaultApplicationMenuItems = true,
-                DisableNativeMenus = true
+                DisableDefaultApplicationMenuItems = true
             })
 #if DEBUG
             .WithDeveloperTools()
