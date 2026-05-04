@@ -101,22 +101,26 @@ public partial class App : Application
             return;
         }
 
-        if (_configWindow is null)
+        if (_configWindow is not null)
         {
-            _configWindow = new ConfigWindow(_settingsStore, _displayService.GetMonitorBounds());
-            _configWindow.Closed += (_, _) => _configWindow = null;
-            _configWindow.Show();
-            _configWindow.Activate();
+            FocusConfigWindow(_configWindow);
             return;
         }
 
-        if (!_configWindow.IsVisible)
+        _configWindow = new ConfigWindow(_settingsStore, _displayService.GetMonitorBounds());
+        _configWindow.Closed += (_, _) => _configWindow = null;
+        FocusConfigWindow(_configWindow);
+    }
+
+    private static void FocusConfigWindow(ConfigWindow window)
+    {
+        if (!window.IsVisible)
         {
-            _configWindow.Show();
+            window.Show();
         }
 
-        _configWindow.WindowState = WindowState.Normal;
-        _configWindow.Activate();
+        window.WindowState = WindowState.Normal;
+        window.Activate();
     }
 
     private void OnSettingsChanged(object? sender, OverlaySettings settings)
