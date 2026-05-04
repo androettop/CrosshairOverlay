@@ -15,7 +15,10 @@ public partial class App : Application
 {
     private IClassicDesktopStyleApplicationLifetime? _desktop;
     private OverlaySettingsStore? _settingsStore;
-    private readonly IWindowsOverlayPlatformService _platformService = new WindowsOverlayPlatformService();
+    private readonly IWindowsOverlayPlatformService _platformService =
+        OperatingSystem.IsMacOS()
+            ? new MacOsOverlayPlatformService()
+            : new WindowsOverlayPlatformService();
     private readonly WindowsDisplayService _displayService = new();
     private readonly List<MainWindow> _overlayWindows = [];
     private ConfigWindow? _configWindow;

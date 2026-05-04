@@ -8,6 +8,8 @@ on:
 
 jobs:
   build:
+    env:
+      APP_NAME: CrosshairOverlay
     strategy:
       fail-fast: false
       matrix:
@@ -15,15 +17,19 @@ jobs:
           - os: windows-latest
             rid: win-x64
             artifact: CrosshairOverlay-win-x64
+            artifact_path: ./publish/win-x64
           - os: ubuntu-latest
             rid: linux-x64
             artifact: CrosshairOverlay-linux-x64
+            artifact_path: ./publish/linux-x64
           - os: macos-latest
             rid: osx-x64
             artifact: CrosshairOverlay-osx-x64
+            artifact_path: ./artifacts/osx-x64/CrosshairOverlay-osx-x64.dmg
           - os: macos-latest
             rid: osx-arm64
             artifact: CrosshairOverlay-osx-arm64
+            artifact_path: ./artifacts/osx-arm64/CrosshairOverlay-osx-arm64.dmg
 
     runs-on: ${{ matrix.os }}
 
@@ -42,8 +48,70 @@ jobs:
       - name: Publish
         run: dotnet publish -c Release -r ${{ matrix.rid }} --self-contained true -o ./publish/${{ matrix.rid }}
 
+      - name: Package macOS app bundle
+        if: startsWith(matrix.rid, 'osx-')
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          publish_dir="./publish/${{ matrix.rid }}"
+          artifact_dir="./artifacts/${{ matrix.rid }}"
+          app_dir="${artifact_dir}/${APP_NAME}.app"
+          contents_dir="${app_dir}/Contents"
+          macos_dir="${contents_dir}/MacOS"
+          resources_dir="${contents_dir}/Resources"
+          dmg_stage_dir="${artifact_dir}/dmg"
+          dmg_path="${artifact_dir}/${APP_NAME}-${{ matrix.rid }}.dmg"
+
+          rm -rf "${artifact_dir}"
+          mkdir -p "${macos_dir}" "${resources_dir}" "${dmg_stage_dir}"
+
+          ditto "${publish_dir}" "${macos_dir}"
+          chmod +x "${macos_dir}/${APP_NAME}"
+
+          cat > "${contents_dir}/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleDevelopmentRegion</key>
+            <string>en</string>
+            <key>CFBundleDisplayName</key>
+            <string>${APP_NAME}</string>
+            <key>CFBundleExecutable</key>
+            <string>${APP_NAME}</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.crosshairoverlay.app</string>
+            <key>CFBundleInfoDictionaryVersion</key>
+            <string>6.0</string>
+            <key>CFBundleName</key>
+            <string>${APP_NAME}</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ github.run_number }}</string>
+            <key>CFBundleVersion</key>
+            <string>${{ github.run_number }}</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>12.0</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+          ditto "${app_dir}" "${dmg_stage_dir}/${APP_NAME}.app"
+          ln -s /Applications "${dmg_stage_dir}/Applications"
+
+          hdiutil create \
+            -volname "${APP_NAME}" \
+            -srcfolder "${dmg_stage_dir}" \
+            -ov \
+            -format UDZO \
+            "${dmg_path}"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ./publish/${{ matrix.rid }}
+          path: ${{ matrix.artifact_path }}

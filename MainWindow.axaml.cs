@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -49,7 +50,10 @@ public partial class MainWindow : Window
         Height = _monitorBounds.Height;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         ExtendClientAreaToDecorationsHint = true;
-        WindowState = WindowState.FullScreen;
+        // On macOS, WindowState.FullScreen enters the native fullscreen Space
+        // which composites opaquely and breaks transparency. Use Normal + explicit
+        // bounds instead. Linux also benefits from this to avoid Wayland issues.
+        WindowState = OperatingSystem.IsWindows() ? WindowState.FullScreen : WindowState.Normal;
     }
 
     private void ApplySettings(OverlaySettings settings)
