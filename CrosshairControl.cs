@@ -70,7 +70,8 @@ public sealed class CrosshairControl : Control
         var cy = Bounds.Height / 2;
 
         var alpha = (byte)Math.Clamp(Math.Round(Color.A * opacity), 0, 255);
-        var brush = new SolidColorBrush(Color.WithAlpha(alpha));
+        var color = new Color(alpha, Color.R, Color.G, Color.B);
+        var brush = new SolidColorBrush(color);
         var pen = new Pen(brush, thickness);
 
         var leftStart = new Point(cx - gap - size, cy);

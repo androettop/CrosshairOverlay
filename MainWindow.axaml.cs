@@ -10,6 +10,11 @@ public partial class MainWindow : Window
 {
     private readonly IWindowsOverlayPlatformService _platformService;
 
+    public MainWindow()
+        : this(new OverlaySettings(), new WindowsOverlayPlatformService())
+    {
+    }
+
     public MainWindow(OverlaySettings settings, IWindowsOverlayPlatformService platformService)
     {
         _platformService = platformService;
@@ -28,12 +33,10 @@ public partial class MainWindow : Window
         Topmost = true;
         CanResize = false;
         ShowInTaskbar = false;
-        SystemDecorations = SystemDecorations.None;
+        WindowDecorations = Avalonia.Controls.WindowDecorations.None;
         WindowState = WindowState.FullScreen;
         TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         ExtendClientAreaToDecorationsHint = true;
-        ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
-        ExtendClientAreaTitleBarHeightHint = -1;
     }
 
     private void ApplySettings(OverlaySettings settings)
