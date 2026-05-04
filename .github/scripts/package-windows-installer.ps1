@@ -1,12 +1,6 @@
 param(
     [Parameter(Mandatory = $true)]
-    [string]$Rid,
-
-    [Parameter(Mandatory = $true)]
-    [string]$RunNumber,
-
-    [Parameter(Mandatory = $true)]
-    [string]$RunAttempt
+    [string]$Rid
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 $publishDir = (Resolve-Path "./publish/$Rid").Path
 $artifactDir = Join-Path (Resolve-Path ".").Path "artifacts/$Rid"
 $outputBaseName = "$($env:APP_NAME)-$Rid-setup"
-$appVersion = "1.0.$RunNumber.$RunAttempt"
+$appVersion = $env:APP_VERSION
 $templatePath = (Resolve-Path "./.github/installer/windows/setup.iss").Path
 
 New-Item -ItemType Directory -Force -Path $artifactDir | Out-Null

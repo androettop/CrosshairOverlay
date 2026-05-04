@@ -11,7 +11,7 @@ resources_dir="${contents_dir}/Resources"
 dmg_stage_dir="${artifact_dir}/dmg"
 dmg_path="${artifact_dir}/${APP_NAME}-${rid}.dmg"
 icon_source="./assets/icon-source.png"
-run_number="${GITHUB_RUN_NUMBER:-0}"
+app_version="${APP_VERSION:-0.0.0}"
 
 rm -rf "${artifact_dir}"
 mkdir -p "${macos_dir}" "${resources_dir}" "${dmg_stage_dir}"
@@ -60,9 +60,9 @@ cat > "${contents_dir}/Info.plist" <<EOF
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>${run_number}</string>
+  <string>${app_version}</string>
   <key>CFBundleVersion</key>
-  <string>${run_number}</string>
+  <string>${app_version}</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
   <key>NSHighResolutionCapable</key>

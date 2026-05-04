@@ -60,6 +60,17 @@ jobs:
       - name: Restore
         run: dotnet restore
 
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION=$(grep -oP '(?<=<Version>)[^<]+' CrosshairOverlay.csproj)
+          fi
+          echo "APP_VERSION=${VERSION}" >> "$GITHUB_ENV"
+
       - name: Publish
         run: dotnet publish ./CrosshairOverlay.csproj -c Release -r ${{ matrix.rid }} --self-contained true -o ./publish/${{ matrix.rid }}
 
@@ -74,8 +85,6 @@ jobs:
         run: >-
           ./.github/scripts/package-windows-installer.ps1
           -Rid "${{ matrix.rid }}"
-          -RunNumber "${{ github.run_number }}"
-          -RunAttempt "${{ github.run_attempt }}"
 
       - name: Package macOS app bundle
         if: startsWith(matrix.rid, 'osx-')
