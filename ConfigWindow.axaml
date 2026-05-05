@@ -30,7 +30,10 @@
 
             <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="CenterDotTitle" Text="Center Dot" FontSize="18" FontWeight="SemiBold" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock x:Name="CenterDotTitle" Grid.Column="0" Text="Center Dot" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button x:Name="ResetCenterDotButton" Grid.Column="1" Content="↺" Click="OnResetCenterDot" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
+                    </Grid>
                     <CheckBox x:Name="EnableCenterDot" Content="Enable center dot" IsCheckedChanged="OnAnySettingChanged" />
 
                     <TextBlock x:Name="CenterDotShapeLabel" Text="Shape" />
@@ -52,7 +55,10 @@
 
             <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="DotGridTitle" Text="Dot Grid" FontSize="18" FontWeight="SemiBold" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock x:Name="DotGridTitle" Grid.Column="0" Text="Dot Grid" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button x:Name="ResetDotGridButton" Grid.Column="1" Content="↺" Click="OnResetDotGrid" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
+                    </Grid>
                     <CheckBox x:Name="EnableDotGrid" Content="Enable dot grid" IsCheckedChanged="OnAnySettingChanged" />
 
                     <TextBlock x:Name="DotGridPointShapeLabel" Text="Point shape" />
@@ -96,7 +102,10 @@
 
             <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="CrosshairTitle" Text="Crosshair" FontSize="18" FontWeight="SemiBold" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock x:Name="CrosshairTitle" Grid.Column="0" Text="Crosshair" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button x:Name="ResetCrosshairButton" Grid.Column="1" Content="↺" Click="OnResetCrosshair" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
+                    </Grid>
                     <CheckBox x:Name="EnableCrosshair" Content="Enable crosshair" IsCheckedChanged="OnAnySettingChanged" />
 
                     <TextBlock x:Name="CrosshairHorizontalLengthLabel" Text="Horizontal length: 16" />
@@ -121,7 +130,13 @@
 
             <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
                 <StackPanel Spacing="10">
-                    <TextBlock x:Name="MotionDetectionTitle" Text="Motion Detection" FontSize="18" FontWeight="SemiBold" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBlock x:Name="MotionDetectionTitle" Text="Motion Detection" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <TextBlock x:Name="MotionDetectionExperimentalLabel" Text="(Experimental)" FontSize="13" Opacity="0.55" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <Button x:Name="ResetMotionDetectionButton" Grid.Column="1" Content="↺" Click="OnResetMotionDetection" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
+                    </Grid>
                     <CheckBox x:Name="EnableMotionDetection" Content="Enable motion detection" IsCheckedChanged="OnAnySettingChanged" />
                     <CheckBox x:Name="MotionRegionPreview" Content="Show capture region" IsCheckedChanged="OnAnySettingChanged" />
 
@@ -132,7 +147,7 @@
                     <Slider x:Name="MotionSmoothingFrames" Minimum="1" Maximum="30" Value="5" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
 
                     <TextBlock x:Name="MotionCancellationIntensityLabel" Text="Cancellation intensity: 1.00" />
-                    <Slider x:Name="MotionCancellationIntensity" Minimum="0" Maximum="3" Value="1" TickFrequency="0.05" ValueChanged="OnAnySettingChanged" />
+                    <Slider x:Name="MotionCancellationIntensity" Minimum="-1" Maximum="1" Value="1" TickFrequency="0.05" ValueChanged="OnAnySettingChanged" />
 
                     <TextBlock x:Name="MotionCaptureFpsLabel" Text="Capture FPS: 30" />
                     <Slider x:Name="MotionCaptureFps" Minimum="10" Maximum="60" Value="30" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />

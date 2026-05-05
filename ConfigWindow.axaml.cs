@@ -245,8 +245,16 @@ public partial class ConfigWindow : Window
         CrosshairColorLabel.Text = L("ColorFormat");
 
         MotionDetectionTitle.Text = L("MotionDetection");
+        MotionDetectionExperimentalLabel.Text = L("Experimental");
         EnableMotionDetection.Content = L("EnableMotionDetection");
         MotionRegionPreview.Content = L("MotionRegionPreview");
+
+        var resetTooltip = L("Reset");
+        ToolTip.SetTip(ResetCenterDotButton, resetTooltip);
+        ToolTip.SetTip(ResetDotGridButton, resetTooltip);
+        ToolTip.SetTip(ResetCrosshairButton, resetTooltip);
+        ToolTip.SetTip(ResetMotionDetectionButton, resetTooltip);
+
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
             var bounds = _monitorBounds[i];
@@ -288,6 +296,7 @@ public partial class ConfigWindow : Window
             (true, "Thickness") => "Grosor",
             (true, "Monitor") => "Monitor",
             (true, "MotionDetection") => "Detección de movimiento",
+            (true, "Experimental") => "(Experimental)",
             (true, "EnableMotionDetection") => "Activar detección de movimiento",
             (true, "MotionRegionPreview") => "Mostrar región de captura",
             (true, "MotionRegionSize") => "Tamaño de región de captura",
@@ -295,6 +304,8 @@ public partial class ConfigWindow : Window
             (true, "MotionCancellationIntensity") => "Intensidad de cancelación",
             (true, "MotionCaptureFps") => "FPS de captura",
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
+            (true, "Reset") => "Reiniciar",
+
             (false, "WindowTitle") => "Crosshair Overlay Settings",
             (false, "HeaderTitle") => "Overlay Settings",
             (false, "General") => "General",
@@ -325,6 +336,7 @@ public partial class ConfigWindow : Window
             (false, "Thickness") => "Thickness",
             (false, "Monitor") => "Monitor",
             (false, "MotionDetection") => "Motion Detection",
+            (false, "Experimental") => "(Experimental)",
             (false, "EnableMotionDetection") => "Enable motion detection",
             (false, "MotionRegionPreview") => "Show capture region",
             (false, "MotionRegionSize") => "Capture region size",
@@ -332,6 +344,8 @@ public partial class ConfigWindow : Window
             (false, "MotionCancellationIntensity") => "Cancellation intensity",
             (false, "MotionCaptureFps") => "Capture FPS",
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
+            (false, "Reset") => "Reset",
+
             _ => key
         };
     }
@@ -363,5 +377,62 @@ public partial class ConfigWindow : Window
     private static string FromAreaShapeIndex(int index)
     {
         return index == 1 ? "Circle" : "Square";
+    }
+
+    private void OnResetCenterDot(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _settingsStore.Update(s =>
+        {
+            var d = new OverlaySettings();
+            s.CenterDotSize = d.CenterDotSize;
+            s.CenterDotShape = d.CenterDotShape;
+            s.CenterDotColor = d.CenterDotColor;
+            s.CenterDotOpacity = d.CenterDotOpacity;
+        });
+    }
+
+    private void OnResetDotGrid(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _settingsStore.Update(s =>
+        {
+            var d = new OverlaySettings();
+            s.DotGridPointSize = d.DotGridPointSize;
+            s.DotGridPointShape = d.DotGridPointShape;
+            s.DotGridAreaShape = d.DotGridAreaShape;
+            s.DotGridColor = d.DotGridColor;
+            s.DotGridRows = d.DotGridRows;
+            s.DotGridColumns = d.DotGridColumns;
+            s.DotGridRadiusPoints = d.DotGridRadiusPoints;
+            s.DotGridSpacing = d.DotGridSpacing;
+            s.DotGridOpacity = d.DotGridOpacity;
+        });
+    }
+
+    private void OnResetCrosshair(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _settingsStore.Update(s =>
+        {
+            var d = new OverlaySettings();
+            s.CrosshairColor = d.CrosshairColor;
+            s.CrosshairOpacity = d.CrosshairOpacity;
+            s.CrosshairHorizontalLength = d.CrosshairHorizontalLength;
+            s.CrosshairVerticalLength = d.CrosshairVerticalLength;
+            s.CrosshairGap = d.CrosshairGap;
+            s.CrosshairThickness = d.CrosshairThickness;
+        });
+    }
+
+    private void OnResetMotionDetection(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        _settingsStore.Update(s =>
+        {
+            var d = new OverlaySettings();
+            s.MotionRegionSize = d.MotionRegionSize;
+            s.MotionRegionPreview = d.MotionRegionPreview;
+            s.MotionSmoothingFrames = d.MotionSmoothingFrames;
+            s.MotionCancellationIntensity = d.MotionCancellationIntensity;
+            s.MotionCaptureFps = d.MotionCaptureFps;
+            s.MotionDeadZonePixels = d.MotionDeadZonePixels;
+        });
     }
 }

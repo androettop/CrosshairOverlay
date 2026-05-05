@@ -16,13 +16,13 @@ public sealed class OverlaySettings
 
     public bool EnableDotGrid { get; set; } = false;
 
-    public double DotGridPointSize { get; set; } = 3;
+    public double DotGridPointSize { get; set; } = 6;
 
     public string DotGridPointShape { get; set; } = "Circle";
 
     public string DotGridColor { get; set; } = "#FFFFFF";
 
-    public double DotGridOpacity { get; set; } = 0.6;
+    public double DotGridOpacity { get; set; } = 0.7;
 
     public string DotGridAreaShape { get; set; } = "Circle";
 
@@ -56,13 +56,13 @@ public sealed class OverlaySettings
 
     public bool EnableMotionDetection { get; set; } = false;
 
-    public int MotionRegionSize { get; set; } = 200;
+    public int MotionRegionSize { get; set; } = 360;
 
     public bool MotionRegionPreview { get; set; } = false;
 
     public int MotionSmoothingFrames { get; set; } = 5;
 
-    public double MotionCancellationIntensity { get; set; } = 1.0;
+    public double MotionCancellationIntensity { get; set; } = 0.15;
 
     public int MotionCaptureFps { get; set; } = 30;
 

@@ -77,7 +77,7 @@ public sealed class SettingsService
 
         settings.MotionRegionSize = Math.Clamp(settings.MotionRegionSize, 64, 800);
         settings.MotionSmoothingFrames = Math.Clamp(settings.MotionSmoothingFrames, 1, 30);
-        settings.MotionCancellationIntensity = Math.Clamp(settings.MotionCancellationIntensity, 0, 3);
+        settings.MotionCancellationIntensity = Math.Clamp(settings.MotionCancellationIntensity, -1, 1);
         settings.MotionCaptureFps = Math.Clamp(settings.MotionCaptureFps, 10, 60);
         settings.MotionDeadZonePixels = Math.Clamp(settings.MotionDeadZonePixels, 0, 5);
 
