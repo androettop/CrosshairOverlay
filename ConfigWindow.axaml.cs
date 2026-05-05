@@ -201,6 +201,13 @@ public partial class ConfigWindow : Window
         {
             PresetsPanel.Children.Add(CreatePresetCard(preset));
         }
+
+        foreach (var userPreset in _settingsStore.Current.UserPresets)
+        {
+            PresetsPanel.Children.Add(CreateUserPresetCard(userPreset));
+        }
+
+        PresetsPanel.Children.Add(CreateNewPresetCard());
     }
 
     private Control CreatePresetCard(OverlayPreset preset)
@@ -251,6 +258,7 @@ public partial class ConfigWindow : Window
 
         var nameLabel = new TextBlock
         {
+            Text = L(preset.NameKey),
             HorizontalAlignment = HorizontalAlignment.Center,
             Margin = new Thickness(0, 4, 0, 0),
             FontWeight = FontWeight.SemiBold,
@@ -301,6 +309,321 @@ public partial class ConfigWindow : Window
         {
             return null;
         }
+    }
+
+    private Control CreateUserPresetCard(UserPreset userPreset)
+    {
+        var id = userPreset.Id;
+
+        var previewSettings = OverlayPresets.ToPreviewSettings(userPreset.Values);
+        var crosshair = new CrosshairControl
+        {
+            Width = OverlayPresets.BasePreviewWidth,
+            Height = OverlayPresets.BasePreviewHeight,
+        };
+        crosshair.ApplySettings(previewSettings);
+
+        var viewbox = new Viewbox
+        {
+            Stretch = Stretch.Uniform,
+            Child = crosshair,
+            RenderTransform = new ScaleTransform(0.68, 0.68),
+            RenderTransformOrigin = new RelativePoint(new Point(0.5, 0.5), RelativeUnit.Relative),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var previewLayer = new Grid();
+        if (_presetBackground is not null)
+        {
+            previewLayer.Children.Add(new Image
+            {
+                Source = _presetBackground,
+                Stretch = Stretch.UniformToFill,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+            });
+        }
+        previewLayer.Children.Add(viewbox);
+
+        var previewContainer = new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            ClipToBounds = true,
+            Height = PresetPreviewHeight,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Child = previewLayer,
+        };
+        previewContainer.PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton == MouseButton.Left)
+            {
+                _settingsStore.ApplyUserPreset(id);
+            }
+        };
+
+        // --- Flyout with menu / rename / delete-confirm states ---
+        var flyoutContent = new StackPanel { Spacing = 4, MinWidth = 180, Margin = new Thickness(2) };
+        var flyout = new Flyout { Content = flyoutContent };
+
+        void ShowMenu()
+        {
+            flyoutContent.Children.Clear();
+            var overwriteBtn = new Button
+            {
+                Content = L("Preset_Action_Overwrite"),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 0, 2),
+            };
+            var renameBtn = new Button
+            {
+                Content = L("Preset_Action_Rename"),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 0, 2),
+            };
+            var deleteBtn = new Button
+            {
+                Content = L("Preset_Action_Delete"),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            overwriteBtn.Click += (_, _) =>
+            {
+                flyout.Hide();
+                _settingsStore.OverwriteUserPreset(id);
+                BuildPresets();
+            };
+            renameBtn.Click += (_, _) => ShowRename();
+            deleteBtn.Click += (_, _) => ShowDeleteConfirm();
+            flyoutContent.Children.Add(overwriteBtn);
+            flyoutContent.Children.Add(renameBtn);
+            flyoutContent.Children.Add(deleteBtn);
+        }
+
+        void ShowRename()
+        {
+            flyoutContent.Children.Clear();
+            var nameBox = new TextBox
+            {
+                Text = userPreset.Name,
+                MaxLength = 40,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+            };
+            var confirmBtn = new Button { Content = "✓", Padding = new Thickness(8, 4) };
+            var cancelBtn = new Button { Content = "✗", Padding = new Thickness(8, 4) };
+            var btnRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Spacing = 4,
+                Margin = new Thickness(0, 4, 0, 0),
+            };
+            btnRow.Children.Add(confirmBtn);
+            btnRow.Children.Add(cancelBtn);
+            void Confirm()
+            {
+                var newName = nameBox.Text?.Trim() ?? "";
+                if (string.IsNullOrEmpty(newName)) return;
+                flyout.Hide();
+                _settingsStore.RenameUserPreset(id, newName);
+                BuildPresets();
+            }
+            nameBox.KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Enter) Confirm();
+                else if (e.Key == Key.Escape) ShowMenu();
+            };
+            confirmBtn.Click += (_, _) => Confirm();
+            cancelBtn.Click += (_, _) => ShowMenu();
+            flyoutContent.Children.Add(nameBox);
+            flyoutContent.Children.Add(btnRow);
+            nameBox.AttachedToVisualTree += (_, _) => { nameBox.Focus(); nameBox.SelectAll(); };
+        }
+
+        void ShowDeleteConfirm()
+        {
+            flyoutContent.Children.Clear();
+            var confirmText = new TextBlock
+            {
+                Text = L("Preset_Delete_Confirm"),
+                Foreground = new SolidColorBrush(new Color(255, 220, 80, 80)),
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = 200,
+                Margin = new Thickness(0, 0, 0, 6),
+            };
+            var confirmBtn = new Button { Content = "✓", Padding = new Thickness(8, 4) };
+            var cancelBtn = new Button { Content = "✗", Padding = new Thickness(8, 4) };
+            var btnRow = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Spacing = 4,
+            };
+            btnRow.Children.Add(confirmBtn);
+            btnRow.Children.Add(cancelBtn);
+            confirmBtn.Click += (_, _) =>
+            {
+                flyout.Hide();
+                _settingsStore.DeleteUserPreset(id);
+                BuildPresets();
+            };
+            cancelBtn.Click += (_, _) => ShowMenu();
+            flyoutContent.Children.Add(confirmText);
+            flyoutContent.Children.Add(btnRow);
+        }
+
+        ShowMenu();
+
+        // Options button (•••) that opens the flyout
+        var optionsBtn = new Button
+        {
+            Content = "•••",
+            Padding = new Thickness(6, 2),
+            FontSize = 10,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        FlyoutBase.SetAttachedFlyout(optionsBtn, flyout);
+        optionsBtn.Click += (_, _) =>
+        {
+            ShowMenu();
+            FlyoutBase.ShowAttachedFlyout(optionsBtn);
+        };
+
+        // Bottom row: name left, options button right
+        var nameLabel = new TextBlock
+        {
+            Text = userPreset.Name,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontWeight = FontWeight.SemiBold,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            Margin = new Thickness(0, 0, 4, 0),
+        };
+        var bottomRow = new Grid();
+        bottomRow.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
+        bottomRow.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        Grid.SetColumn(nameLabel, 0);
+        Grid.SetColumn(optionsBtn, 1);
+        bottomRow.Children.Add(nameLabel);
+        bottomRow.Children.Add(optionsBtn);
+
+        var stack = new StackPanel { Spacing = 6 };
+        stack.Children.Add(previewContainer);
+        stack.Children.Add(bottomRow);
+
+        var normalBg = new SolidColorBrush(new Color(255, 25, 28, 36));
+        var hoverBg = new SolidColorBrush(new Color(255, 38, 43, 55));
+
+        var card = new Border
+        {
+            Background = normalBg,
+            BorderBrush = new SolidColorBrush(new Color(255, 52, 58, 68)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(8),
+            Margin = new Thickness(3),
+            Child = stack,
+        };
+        card.PointerEntered += (_, _) => card.Background = hoverBg;
+        card.PointerExited += (_, _) => card.Background = normalBg;
+
+        return card;
+    }
+
+    private Control CreateNewPresetCard()
+    {
+        var plusText = new TextBlock
+        {
+            Text = "+",
+            FontSize = 36,
+            FontWeight = FontWeight.Light,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        var plusContainer = new Border
+        {
+            Height = PresetPreviewHeight,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = plusText,
+        };
+        var label = new TextBlock
+        {
+            Text = L("Preset_NewCard_Placeholder"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            FontWeight = FontWeight.SemiBold,
+            Margin = new Thickness(0, 4, 0, 0),
+        };
+        var stack = new StackPanel { Spacing = 6 };
+        stack.Children.Add(plusContainer);
+        stack.Children.Add(label);
+
+        // Flyout with name input
+        var nameBox = new TextBox
+        {
+            PlaceholderText = L("Preset_NewCard_NameHint"),
+            MaxLength = 40,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var confirmBtn = new Button { Content = "✓", Padding = new Thickness(8, 4) };
+        var cancelBtn = new Button { Content = "✗", Padding = new Thickness(8, 4) };
+        var btnRow = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Spacing = 4,
+            Margin = new Thickness(0, 4, 0, 0),
+        };
+        btnRow.Children.Add(confirmBtn);
+        btnRow.Children.Add(cancelBtn);
+        var flyoutContent = new StackPanel { Spacing = 4, MinWidth = 180, Margin = new Thickness(2) };
+        flyoutContent.Children.Add(nameBox);
+        flyoutContent.Children.Add(btnRow);
+        var flyout = new Flyout { Content = flyoutContent };
+
+        void Confirm()
+        {
+            var name = nameBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(name)) return;
+            nameBox.Text = "";
+            flyout.Hide();
+            _settingsStore.CreateUserPreset(name);
+            BuildPresets();
+        }
+        nameBox.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter) Confirm();
+            else if (e.Key == Key.Escape) { nameBox.Text = ""; flyout.Hide(); }
+        };
+        confirmBtn.Click += (_, _) => Confirm();
+        cancelBtn.Click += (_, _) => { nameBox.Text = ""; flyout.Hide(); };
+
+        var normalBg = new SolidColorBrush(new Color(255, 18, 22, 30));
+        var hoverBg = new SolidColorBrush(new Color(255, 30, 35, 46));
+
+        var card = new Border
+        {
+            Background = normalBg,
+            BorderBrush = new SolidColorBrush(new Color(255, 52, 58, 68)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(8),
+            Margin = new Thickness(3),
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Child = stack,
+        };
+        FlyoutBase.SetAttachedFlyout(card, flyout);
+        card.PointerEntered += (_, _) => card.Background = hoverBg;
+        card.PointerExited += (_, _) => card.Background = normalBg;
+        card.PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton == MouseButton.Left)
+            {
+                nameBox.Text = "";
+                FlyoutBase.ShowAttachedFlyout(card);
+            }
+        };
+        flyout.Opened += (_, _) => nameBox.Focus();
+
+        return card;
     }
 
     private void InitializeSearchSections()
@@ -560,6 +883,12 @@ public partial class ConfigWindow : Window
             (true, "Preset_default-dotgrid") => "Grilla de puntos",
             (true, "Preset_default-centerdot") => "Punto central",
             (true, "Preset_grid-sniper") => "Francotirador",
+            (true, "Preset_Action_Overwrite") => "Actualizar con config actual",
+            (true, "Preset_Action_Rename") => "Renombrar",
+            (true, "Preset_Action_Delete") => "Eliminar",
+            (true, "Preset_Delete_Confirm") => "¿Eliminar este preset?",
+            (true, "Preset_NewCard_Placeholder") => "Nuevo preset",
+            (true, "Preset_NewCard_NameHint") => "Nombre del preset",
             (true, "SearchNoResults") => "No se encontraron ajustes con esa búsqueda",
             (true, "SearchResultsFormat") => "{0} secciones coinciden",
             (true, "Reset") => "Reiniciar",
@@ -616,6 +945,12 @@ public partial class ConfigWindow : Window
             (false, "Preset_default-dotgrid") => "Dot Grid",
             (false, "Preset_default-centerdot") => "Center Dot",
             (false, "Preset_grid-sniper") => "Grid Sniper",
+            (false, "Preset_Action_Overwrite") => "Update with current config",
+            (false, "Preset_Action_Rename") => "Rename",
+            (false, "Preset_Action_Delete") => "Delete",
+            (false, "Preset_Delete_Confirm") => "Delete this preset?",
+            (false, "Preset_NewCard_Placeholder") => "New preset",
+            (false, "Preset_NewCard_NameHint") => "Preset name",
             (false, "SearchNoResults") => "No settings matched that search",
             (false, "SearchResultsFormat") => "{0} matching sections",
             (false, "Reset") => "Reset",

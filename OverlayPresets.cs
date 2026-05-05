@@ -17,7 +17,92 @@ public static class OverlayPresets
     /// <summary>Virtual canvas height at which the CrosshairControl renders inside preset previews.</summary>
     public const double BasePreviewHeight = 400;
 
-    /// <summary>
+    /// <summary>Captures the Appearance, Motion and Debug fields from <paramref name="src"/> into a <see cref="PresetValues"/>.</summary>
+    public static PresetValues CaptureFromSettings(OverlaySettings src) => new()
+    {
+        EnableCenterDot = src.EnableCenterDot,
+        CenterDotSize = src.CenterDotSize,
+        CenterDotShape = src.CenterDotShape,
+        CenterDotColor = src.CenterDotColor,
+        CenterDotOpacity = src.CenterDotOpacity,
+
+        EnableDotGrid = src.EnableDotGrid,
+        DotGridPointSize = src.DotGridPointSize,
+        DotGridPointShape = src.DotGridPointShape,
+        DotGridColor = src.DotGridColor,
+        DotGridOpacity = src.DotGridOpacity,
+        DotGridAreaShape = src.DotGridAreaShape,
+        DotGridRows = src.DotGridRows,
+        DotGridColumns = src.DotGridColumns,
+        DotGridRadiusPoints = src.DotGridRadiusPoints,
+        DotGridSpacing = src.DotGridSpacing,
+
+        EnableCrosshair = src.EnableCrosshair,
+        CrosshairColor = src.CrosshairColor,
+        CrosshairOpacity = src.CrosshairOpacity,
+        CrosshairHorizontalLength = src.CrosshairHorizontalLength,
+        CrosshairVerticalLength = src.CrosshairVerticalLength,
+        CrosshairGap = src.CrosshairGap,
+        CrosshairThickness = src.CrosshairThickness,
+
+        EnableMotionDetection = src.EnableMotionDetection,
+        MotionRegionSize = src.MotionRegionSize,
+        MotionRegionPreview = src.MotionRegionPreview,
+        MotionSmoothingFrames = src.MotionSmoothingFrames,
+        MotionCancellationIntensity = src.MotionCancellationIntensity,
+        MotionCaptureFps = src.MotionCaptureFps,
+        MotionDeadZonePixels = src.MotionDeadZonePixels,
+
+        DebugShowMotionCapturePreview = src.DebugShowMotionCapturePreview,
+    };
+
+    /// <summary>Writes the Appearance, Motion and Debug fields from <paramref name="v"/> into <paramref name="dst"/>.</summary>
+    public static void ApplyToSettings(PresetValues v, OverlaySettings dst)
+    {
+        dst.EnableCenterDot = v.EnableCenterDot;
+        dst.CenterDotSize = v.CenterDotSize;
+        dst.CenterDotShape = v.CenterDotShape;
+        dst.CenterDotColor = v.CenterDotColor;
+        dst.CenterDotOpacity = v.CenterDotOpacity;
+
+        dst.EnableDotGrid = v.EnableDotGrid;
+        dst.DotGridPointSize = v.DotGridPointSize;
+        dst.DotGridPointShape = v.DotGridPointShape;
+        dst.DotGridColor = v.DotGridColor;
+        dst.DotGridOpacity = v.DotGridOpacity;
+        dst.DotGridAreaShape = v.DotGridAreaShape;
+        dst.DotGridRows = v.DotGridRows;
+        dst.DotGridColumns = v.DotGridColumns;
+        dst.DotGridRadiusPoints = v.DotGridRadiusPoints;
+        dst.DotGridSpacing = v.DotGridSpacing;
+
+        dst.EnableCrosshair = v.EnableCrosshair;
+        dst.CrosshairColor = v.CrosshairColor;
+        dst.CrosshairOpacity = v.CrosshairOpacity;
+        dst.CrosshairHorizontalLength = v.CrosshairHorizontalLength;
+        dst.CrosshairVerticalLength = v.CrosshairVerticalLength;
+        dst.CrosshairGap = v.CrosshairGap;
+        dst.CrosshairThickness = v.CrosshairThickness;
+
+        dst.EnableMotionDetection = v.EnableMotionDetection;
+        dst.MotionRegionSize = v.MotionRegionSize;
+        dst.MotionRegionPreview = v.MotionRegionPreview;
+        dst.MotionSmoothingFrames = v.MotionSmoothingFrames;
+        dst.MotionCancellationIntensity = v.MotionCancellationIntensity;
+        dst.MotionCaptureFps = v.MotionCaptureFps;
+        dst.MotionDeadZonePixels = v.MotionDeadZonePixels;
+
+        dst.DebugShowMotionCapturePreview = v.DebugShowMotionCapturePreview;
+    }
+
+    /// <summary>Creates an <see cref="OverlaySettings"/> snapshot suitable for preview rendering from a <see cref="PresetValues"/>.</summary>
+    public static OverlaySettings ToPreviewSettings(PresetValues v)
+    {
+        var s = new OverlaySettings();
+        ApplyToSettings(v, s);
+        return s;
+    }
+
     /// The definitive list of presets shown in the Settings > General > Presets section.
     /// Each preset explicitly sets all three feature-enable flags so it overrides the current
     /// state regardless of whether the default value is on or off.

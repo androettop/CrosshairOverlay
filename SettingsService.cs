@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace CrosshairOverlay;
@@ -82,6 +83,21 @@ public sealed class SettingsService
         settings.MotionDeadZonePixels = Math.Clamp(settings.MotionDeadZonePixels, 0, 5);
         settings.DebugShowMotionCapturePreview = settings.DebugShowMotionCapturePreview;
 
+        // Validate user presets
+        settings.UserPresets ??= [];
+        var seenIds = new HashSet<string>();
+        settings.UserPresets = settings.UserPresets
+            .Where(p => p is not null
+                && !string.IsNullOrWhiteSpace(p.Id)
+                && !string.IsNullOrWhiteSpace(p.Name)
+                && seenIds.Add(p.Id))
+            .ToList();
+        foreach (var userPreset in settings.UserPresets)
+        {
+            userPreset.Values ??= new PresetValues();
+            ValidatePresetValues(userPreset.Values);
+        }
+
         settings.EnabledMonitorIndices ??= [];
         settings.EnabledMonitorIndices = SanitizeMonitorIndices(settings.EnabledMonitorIndices);
 
@@ -114,6 +130,39 @@ public sealed class SettingsService
         }
 
         return settings;
+    }
+
+    private static void ValidatePresetValues(PresetValues v)
+    {
+        v.CenterDotSize = Math.Max(0, v.CenterDotSize);
+        v.CenterDotOpacity = Math.Clamp(v.CenterDotOpacity, 0, 1);
+
+        v.DotGridPointSize = Math.Max(0, v.DotGridPointSize);
+        v.DotGridOpacity = Math.Clamp(v.DotGridOpacity, 0, 1);
+        v.DotGridRows = Math.Max(1, v.DotGridRows);
+        v.DotGridColumns = Math.Max(1, v.DotGridColumns);
+        v.DotGridRadiusPoints = Math.Max(1, v.DotGridRadiusPoints);
+        v.DotGridSpacing = Math.Max(1, v.DotGridSpacing);
+
+        v.CrosshairOpacity = Math.Clamp(v.CrosshairOpacity, 0, 1);
+        v.CrosshairHorizontalLength = Math.Max(0, v.CrosshairHorizontalLength);
+        v.CrosshairVerticalLength = Math.Max(0, v.CrosshairVerticalLength);
+        v.CrosshairGap = Math.Max(0, v.CrosshairGap);
+        v.CrosshairThickness = Math.Max(1, v.CrosshairThickness);
+
+        v.MotionRegionSize = Math.Clamp(v.MotionRegionSize, 64, 800);
+        v.MotionSmoothingFrames = Math.Clamp(v.MotionSmoothingFrames, 1, 30);
+        v.MotionCancellationIntensity = Math.Clamp(v.MotionCancellationIntensity, -1, 1);
+        v.MotionCaptureFps = Math.Clamp(v.MotionCaptureFps, 10, 60);
+        v.MotionDeadZonePixels = Math.Clamp(v.MotionDeadZonePixels, 0, 5);
+
+        v.CenterDotShape = NormalizeEnum(v.CenterDotShape, "Circle", "Square");
+        v.DotGridPointShape = NormalizeEnum(v.DotGridPointShape, "Circle", "Square");
+        v.DotGridAreaShape = NormalizeEnum(v.DotGridAreaShape, "Square", "Circle");
+
+        if (string.IsNullOrWhiteSpace(v.CenterDotColor)) v.CenterDotColor = "#FFFFFF";
+        if (string.IsNullOrWhiteSpace(v.DotGridColor)) v.DotGridColor = "#FFFFFF";
+        if (string.IsNullOrWhiteSpace(v.CrosshairColor)) v.CrosshairColor = "#FFFFFF";
     }
 
     private static List<int> SanitizeMonitorIndices(List<int> values)
