@@ -72,5 +72,32 @@ public static class OverlayPresets
             s.CenterDotColor = d.CenterDotColor;
             s.CenterDotOpacity = d.CenterDotOpacity;
         }),
+
+        new OverlayPreset("grid-sniper", "Preset_grid-sniper", s =>
+        {
+            s.EnableCenterDot = true;
+            s.CenterDotShape = "Circle";
+            s.CenterDotColor = "#FFFFFF";
+            s.CenterDotSize = 6;
+            s.CenterDotOpacity = 1.0;
+
+            s.EnableDotGrid = true;
+            s.DotGridPointShape = "Square";
+            s.DotGridAreaShape = "Square";
+            s.DotGridPointSize = 4;
+            s.DotGridSpacing = 40;
+            s.DotGridRows = 7;
+            s.DotGridColumns = 15;
+            s.DotGridOpacity = 0.7;
+            s.DotGridColor = "#FFFFFF";
+
+            s.EnableCrosshair = true;
+            s.CrosshairColor = "#FFFFFF";
+            s.CrosshairOpacity = 0.5;
+            s.CrosshairHorizontalLength = 300;
+            s.CrosshairVerticalLength = 0;
+            s.CrosshairGap = 10;
+            s.CrosshairThickness = 2;
+        }),
     ];
 }

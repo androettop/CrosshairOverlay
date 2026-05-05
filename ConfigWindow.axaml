@@ -7,6 +7,7 @@
         Width="680"
         Height="840"
         MinWidth="680"
+        MaxWidth="680"
         MinHeight="680"
         Title="Crosshair Overlay Settings"
         RequestedThemeVariant="Dark"

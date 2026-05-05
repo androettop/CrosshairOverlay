@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Nullable>enable</Nullable>
     <ApplicationIcon>tray.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
