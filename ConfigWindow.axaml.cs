@@ -15,7 +15,7 @@ namespace CrosshairOverlay;
 
 public partial class ConfigWindow : Window
 {
-    private const double PresetPreviewHeight = 168;
+    private const double PresetPreviewHeight = 154;
 
     private readonly OverlaySettingsStore _settingsStore;
     private readonly IReadOnlyList<PixelRect> _monitorBounds;
@@ -220,7 +220,7 @@ public partial class ConfigWindow : Window
         {
             Stretch = Stretch.Uniform,
             Child = crosshair,
-            RenderTransform = new ScaleTransform(0.75, 0.75),
+            RenderTransform = new ScaleTransform(0.68, 0.68),
             RenderTransformOrigin = new RelativePoint(new Point(0.5, 0.5), RelativeUnit.Relative),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,

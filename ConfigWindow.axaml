@@ -62,7 +62,7 @@
                             <Border x:Name="PresetsCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="12">
                                 <StackPanel Spacing="10">
                                     <TextBlock x:Name="PresetsTitle" Text="Presets" FontSize="20" FontWeight="SemiBold" />
-                                    <UniformGrid x:Name="PresetsPanel" Columns="2" />
+                                    <UniformGrid x:Name="PresetsPanel" Columns="3" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
