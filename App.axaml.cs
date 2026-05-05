@@ -118,8 +118,17 @@ public partial class App : Application
         }
 
         _configWindow = new ConfigWindow(_settingsStore, _displayService.GetMonitorBounds());
+        _configWindow.Opened += OnConfigWindowOpened;
         _configWindow.Closed += (_, _) => _configWindow = null;
         FocusConfigWindow(_configWindow);
+    }
+
+    private void OnConfigWindowOpened(object? sender, EventArgs e)
+    {
+        if (sender is ConfigWindow window)
+        {
+            _platformService.SetExcludeFromCapture(window, true);
+        }
     }
 
     private static void FocusConfigWindow(ConfigWindow window)

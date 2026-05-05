@@ -157,6 +157,13 @@
 
                 </StackPanel>
             </Border>
+
+            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Name="DebugToolsTitle" Text="Debug Tools" FontSize="18" FontWeight="SemiBold" />
+                    <CheckBox x:Name="DebugShowMotionCapturePreview" Content="Show captured motion image preview" IsCheckedChanged="OnAnySettingChanged" />
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Window>

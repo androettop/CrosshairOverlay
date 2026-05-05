@@ -52,6 +52,13 @@ public sealed class MotionDetectionEngine
                 return (0, 0);
             }
 
+            if (!HasTrackableDetail(_prevFrame, _currFrame, _frameWidth, _frameHeight))
+            {
+                _smoothedDx = 0;
+                _smoothedDy = 0;
+                return (0, 0);
+            }
+
             var (rawDx, rawDy) = BlockMatch(_prevFrame, _currFrame, _frameWidth, _frameHeight);
 
             // EMA smoothing: alpha = 2 / (N + 1). N=1 → immediate; N=30 → heavy smoothing.
@@ -77,6 +84,46 @@ public sealed class MotionDetectionEngine
             _smoothedDx = 0;
             _smoothedDy = 0;
         }
+    }
+
+    private static bool HasTrackableDetail(byte[] prev, byte[] curr, int w, int h)
+    {
+        var tw = Math.Max(8, w * 3 / 5);
+        var th = Math.Max(8, h * 3 / 5);
+        var tx0 = (w - tw) / 2;
+        var ty0 = (h - th) / 2;
+        var step = Math.Max(1, Math.Max(w, h) / 64);
+
+        long textureEnergy = 0;
+        var sampleCount = 0;
+
+        for (var y = ty0; y < ty0 + th - step; y += step)
+        {
+            var row = y * w;
+            var nextRow = (y + step) * w;
+
+            for (var x = tx0; x < tx0 + tw - step; x += step)
+            {
+                var index = row + x;
+                var rightIndex = row + x + step;
+                var downIndex = nextRow + x;
+
+                textureEnergy += Math.Abs(curr[index] - curr[rightIndex]);
+                textureEnergy += Math.Abs(curr[index] - curr[downIndex]);
+                textureEnergy += Math.Abs(prev[index] - prev[rightIndex]);
+                textureEnergy += Math.Abs(prev[index] - prev[downIndex]);
+                sampleCount += 4;
+            }
+        }
+
+        if (sampleCount == 0)
+        {
+            return false;
+        }
+
+        // Flat or near-flat patches produce ambiguous SAD minima; require a small
+        // average neighbor contrast before trusting motion estimation.
+        return (textureEnergy / (double)sampleCount) >= 2.0;
     }
 
     private static (double dx, double dy) BlockMatch(byte[] prev, byte[] curr, int w, int h)

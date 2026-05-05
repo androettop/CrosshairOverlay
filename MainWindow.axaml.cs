@@ -81,6 +81,7 @@ public partial class MainWindow : Window
             _gridOffsetX = 0;
             _gridOffsetY = 0;
             Crosshair.SetGridOffset(0, 0);
+            Crosshair.SetMotionCapturePreview(null, 0, 0);
             return;
         }
 
@@ -135,6 +136,7 @@ public partial class MainWindow : Window
 
                 Dispatcher.UIThread.Post(() =>
                 {
+                    Crosshair.SetMotionCapturePreview(buffer, regionSize, regionSize);
                     _gridOffsetX -= dx * intensity;
                     _gridOffsetY -= dy * intensity;
                     Crosshair.SetGridOffset(_gridOffsetX, _gridOffsetY);

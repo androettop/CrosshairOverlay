@@ -7,9 +7,14 @@ namespace CrosshairOverlay;
 
 public sealed class CrosshairControl : Control
 {
+    private static readonly ISolidColorBrush[] PreviewBrushes = CreatePreviewBrushes();
+
     private OverlaySettings _settings = new();
     private double _gridOffsetX;
     private double _gridOffsetY;
+    private byte[]? _motionPreviewBuffer;
+    private int _motionPreviewWidth;
+    private int _motionPreviewHeight;
 
     public void ApplySettings(OverlaySettings settings)
     {
@@ -28,6 +33,24 @@ public sealed class CrosshairControl : Control
         InvalidateVisual();
     }
 
+    public void SetMotionCapturePreview(byte[]? buffer, int width, int height)
+    {
+        if (buffer == null || width <= 0 || height <= 0)
+        {
+            _motionPreviewBuffer = null;
+            _motionPreviewWidth = 0;
+            _motionPreviewHeight = 0;
+            InvalidateVisual();
+            return;
+        }
+
+        _motionPreviewBuffer = new byte[buffer.Length];
+        Buffer.BlockCopy(buffer, 0, _motionPreviewBuffer, 0, buffer.Length);
+        _motionPreviewWidth = width;
+        _motionPreviewHeight = height;
+        InvalidateVisual();
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
@@ -39,6 +62,55 @@ public sealed class CrosshairControl : Control
         DrawCrosshair(context, cx, cy);
         DrawCenterDot(context, cx, cy);
         DrawMotionRegionPreview(context, cx, cy);
+        DrawMotionCapturePreview(context);
+    }
+
+    private void DrawMotionCapturePreview(DrawingContext context)
+    {
+        if (!_settings.EnableMotionDetection || !_settings.DebugShowMotionCapturePreview || _motionPreviewBuffer == null || _motionPreviewWidth <= 0 || _motionPreviewHeight <= 0)
+        {
+            return;
+        }
+
+        const double margin = 16;
+        const double maxPreviewSize = 160;
+        const double padding = 6;
+        var scale = Math.Min(maxPreviewSize / _motionPreviewWidth, maxPreviewSize / _motionPreviewHeight);
+        if (scale <= 0)
+        {
+            return;
+        }
+
+        var sampleStep = Math.Max(1, Math.Max(_motionPreviewWidth, _motionPreviewHeight) / 96);
+        var cellSize = scale * sampleStep;
+        var previewWidth = _motionPreviewWidth * scale;
+        var previewHeight = _motionPreviewHeight * scale;
+        var panelRect = new Rect(
+            margin,
+            Math.Max(margin, Bounds.Height - previewHeight - (padding * 2) - margin),
+            previewWidth + (padding * 2),
+            previewHeight + (padding * 2));
+
+        context.DrawRectangle(
+            new SolidColorBrush(new Color(190, 14, 18, 24)),
+            new Pen(new SolidColorBrush(new Color(220, 0, 120, 212)), 1),
+            panelRect);
+
+        var pixelOriginX = panelRect.X + padding;
+        var pixelOriginY = panelRect.Y + padding;
+
+        for (var y = 0; y < _motionPreviewHeight; y += sampleStep)
+        {
+            var drawY = pixelOriginY + (y * scale);
+            for (var x = 0; x < _motionPreviewWidth; x += sampleStep)
+            {
+                var intensity = _motionPreviewBuffer[(y * _motionPreviewWidth) + x];
+                context.DrawRectangle(
+                    PreviewBrushes[intensity],
+                    null,
+                    new Rect(pixelOriginX + (x * scale), drawY, cellSize + 0.5, cellSize + 0.5));
+            }
+        }
     }
 
     private void DrawMotionRegionPreview(DrawingContext context, double cx, double cy)
@@ -208,5 +280,16 @@ public sealed class CrosshairControl : Control
             : fallback;
         var alpha = (byte)Math.Clamp(Math.Round(baseColor.A * Math.Clamp(opacity, 0, 1)), 0, 255);
         return new Color(alpha, baseColor.R, baseColor.G, baseColor.B);
+    }
+
+    private static ISolidColorBrush[] CreatePreviewBrushes()
+    {
+        var brushes = new ISolidColorBrush[256];
+        for (var i = 0; i < brushes.Length; i++)
+        {
+            brushes[i] = new SolidColorBrush(new Color(255, (byte)i, (byte)i, (byte)i));
+        }
+
+        return brushes;
     }
 }

@@ -84,6 +84,7 @@ public partial class ConfigWindow : Window
         MotionCancellationIntensity.Value = settings.MotionCancellationIntensity;
         MotionCaptureFps.Value = settings.MotionCaptureFps;
         MotionDeadZonePixels.Value = settings.MotionDeadZonePixels;
+        DebugShowMotionCapturePreview.IsChecked = settings.DebugShowMotionCapturePreview;
         var enabledMonitors = new HashSet<int>(settings.EnabledMonitorIndices ?? []);
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
@@ -153,6 +154,7 @@ public partial class ConfigWindow : Window
             settings.MotionCancellationIntensity = MotionCancellationIntensity.Value;
             settings.MotionCaptureFps = (int)Math.Round(MotionCaptureFps.Value);
             settings.MotionDeadZonePixels = MotionDeadZonePixels.Value;
+            settings.DebugShowMotionCapturePreview = DebugShowMotionCapturePreview.IsChecked ?? false;
 
             settings.EnabledMonitorIndices = GetSelectedMonitorIndices();
         });
@@ -249,6 +251,9 @@ public partial class ConfigWindow : Window
         EnableMotionDetection.Content = L("EnableMotionDetection");
         MotionRegionPreview.Content = L("MotionRegionPreview");
 
+        DebugToolsTitle.Text = L("DebugTools");
+        DebugShowMotionCapturePreview.Content = L("DebugShowMotionCapturePreview");
+
         var resetTooltip = L("Reset");
         ToolTip.SetTip(ResetCenterDotButton, resetTooltip);
         ToolTip.SetTip(ResetDotGridButton, resetTooltip);
@@ -304,6 +309,8 @@ public partial class ConfigWindow : Window
             (true, "MotionCancellationIntensity") => "Intensidad de cancelación",
             (true, "MotionCaptureFps") => "FPS de captura",
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
+            (true, "DebugTools") => "Herramientas de depuración",
+            (true, "DebugShowMotionCapturePreview") => "Mostrar preview de la imagen capturada",
             (true, "Reset") => "Reiniciar",
 
             (false, "WindowTitle") => "Crosshair Overlay Settings",
@@ -344,6 +351,8 @@ public partial class ConfigWindow : Window
             (false, "MotionCancellationIntensity") => "Cancellation intensity",
             (false, "MotionCaptureFps") => "Capture FPS",
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
+            (false, "DebugTools") => "Debug Tools",
+            (false, "DebugShowMotionCapturePreview") => "Show captured motion image preview",
             (false, "Reset") => "Reset",
 
             _ => key
