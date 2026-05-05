@@ -18,14 +18,16 @@
                 <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                     <TextBlock x:Name="HeaderTitle" Text="Overlay Settings" FontSize="28" FontWeight="Bold" />
                     <TextBlock x:Name="HeaderSubtitle" Text="Organize the overlay by area and jump directly to what you need." Opacity="0.78" TextWrapping="Wrap" />
-                    <TextBlock x:Name="SearchHintText" Text="" Opacity="0.78" IsVisible="False" />
                 </StackPanel>
             </Grid>
         </Border>
 
         <Border Grid.Row="1" Background="#15181D" BorderBrush="#303640" BorderThickness="1" CornerRadius="10" Padding="16">
             <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
-                <TextBlock x:Name="SearchLabel" Text="Quick search" FontSize="13" FontWeight="SemiBold" Opacity="0.86" />
+                <Grid ColumnDefinitions="Auto,*" Height="20">
+                    <TextBlock x:Name="SearchLabel" Text="Quick search" FontSize="13" FontWeight="SemiBold" Opacity="0.86" VerticalAlignment="Center" />
+                    <TextBlock x:Name="SearchHintText" Grid.Column="1" Text="" Opacity="0.78" IsVisible="False" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                </Grid>
                 <TextBox Grid.Row="1" x:Name="SearchBox" PlaceholderText="Search settings, for example: motion, color, monitor" TextChanged="OnSearchTextChanged" />
             </Grid>
         </Border>

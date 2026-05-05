@@ -26,23 +26,51 @@ public static class OverlayPresets
     [
         new OverlayPreset("default-crosshair", "Preset_default-crosshair", s =>
         {
+            var d = new OverlaySettings();
+
             s.EnableCrosshair = true;
             s.EnableDotGrid = false;
             s.EnableCenterDot = false;
+
+            s.CrosshairColor = d.CrosshairColor;
+            s.CrosshairOpacity = d.CrosshairOpacity;
+            s.CrosshairHorizontalLength = d.CrosshairHorizontalLength;
+            s.CrosshairVerticalLength = d.CrosshairVerticalLength;
+            s.CrosshairGap = d.CrosshairGap;
+            s.CrosshairThickness = d.CrosshairThickness;
         }),
 
         new OverlayPreset("default-dotgrid", "Preset_default-dotgrid", s =>
         {
+            var d = new OverlaySettings();
+
             s.EnableDotGrid = true;
             s.EnableCrosshair = false;
             s.EnableCenterDot = false;
+
+            s.DotGridPointSize = d.DotGridPointSize;
+            s.DotGridPointShape = d.DotGridPointShape;
+            s.DotGridColor = d.DotGridColor;
+            s.DotGridOpacity = d.DotGridOpacity;
+            s.DotGridAreaShape = d.DotGridAreaShape;
+            s.DotGridRows = d.DotGridRows;
+            s.DotGridColumns = d.DotGridColumns;
+            s.DotGridRadiusPoints = d.DotGridRadiusPoints;
+            s.DotGridSpacing = d.DotGridSpacing;
         }),
 
         new OverlayPreset("default-centerdot", "Preset_default-centerdot", s =>
         {
+            var d = new OverlaySettings();
+
             s.EnableCenterDot = true;
             s.EnableCrosshair = false;
             s.EnableDotGrid = false;
+
+            s.CenterDotSize = d.CenterDotSize;
+            s.CenterDotShape = d.CenterDotShape;
+            s.CenterDotColor = d.CenterDotColor;
+            s.CenterDotOpacity = d.CenterDotOpacity;
         }),
     ];
 }
