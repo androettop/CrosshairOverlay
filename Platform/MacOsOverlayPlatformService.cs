@@ -10,6 +10,53 @@ namespace CrosshairOverlay.Platform;
 /// </summary>
 public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
 {
+    public void SetExcludeFromCapture(Window window, bool exclude)
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        try
+        {
+            var handle = window.TryGetPlatformHandle();
+            if (handle is null || handle.Handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            var selRespondsToSelector = sel_registerName("respondsToSelector:");
+            var selWindow = sel_registerName("window");
+            var selSetSharingType = sel_registerName("setSharingType:");
+
+            var nativeHandle = handle.Handle;
+            var supportsWindowSelector = objc_msgSend_bool_selector(nativeHandle, selRespondsToSelector, selWindow);
+            var nsWindow = supportsWindowSelector ? objc_msgSend_ptr(nativeHandle, selWindow) : nativeHandle;
+
+            if (nsWindow == IntPtr.Zero)
+            {
+                return;
+            }
+
+            if (objc_msgSend_bool_selector(nsWindow, selRespondsToSelector, selSetSharingType))
+            {
+                // NSWindowSharingNone = 0, NSWindowSharingReadOnly = 1
+                objc_msgSend_void_ulong(nsWindow, selSetSharingType, exclude ? 0UL : 1UL);
+            }
+        }
+        catch
+        {
+            // Best effort only.
+        }
+    }
+
+    public bool TryCaptureRegion(int x, int y, int width, int height, byte[] buffer)
+    {
+        // macOS screen capture implementation is deferred.
+        // Motion detection will be silently inactive on macOS until this is implemented.
+        return false;
+    }
+
     public void EnableClickThrough(Window window)
     {
         if (!OperatingSystem.IsMacOS())
@@ -116,6 +163,9 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
     [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
     [return: MarshalAs(UnmanagedType.I1)]
     private static extern bool objc_msgSend_bool_selector(IntPtr receiver, IntPtr selector, IntPtr arg);
+
+    [DllImport("/usr/lib/libobjc.dylib", EntryPoint = "objc_msgSend")]
+    private static extern void objc_msgSend_void_ulong(IntPtr receiver, IntPtr selector, ulong arg);
 
     [DllImport("/usr/lib/libobjc.dylib")]
     private static extern IntPtr objc_getClass([MarshalAs(UnmanagedType.LPStr)] string name);

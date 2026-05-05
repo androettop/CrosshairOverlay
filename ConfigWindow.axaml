@@ -118,6 +118,32 @@
                     <TextBox x:Name="CrosshairColor" Text="#FF0000" PlaceholderText="#FF0000" TextChanged="OnAnySettingChanged" />
                 </StackPanel>
             </Border>
+
+            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
+                <StackPanel Spacing="10">
+                    <TextBlock x:Name="MotionDetectionTitle" Text="Motion Detection" FontSize="18" FontWeight="SemiBold" />
+                    <CheckBox x:Name="EnableMotionDetection" Content="Enable motion detection" IsCheckedChanged="OnAnySettingChanged" />
+                    <CheckBox x:Name="MotionRegionPreview" Content="Show capture region" IsCheckedChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="MotionRegionSizeLabel" Text="Capture region size: 200" />
+                    <Slider x:Name="MotionRegionSize" Minimum="64" Maximum="800" Value="200" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="MotionSmoothingFramesLabel" Text="Frame smoothing: 5" />
+                    <Slider x:Name="MotionSmoothingFrames" Minimum="1" Maximum="30" Value="5" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="MotionCancellationIntensityLabel" Text="Cancellation intensity: 1.00" />
+                    <Slider x:Name="MotionCancellationIntensity" Minimum="0" Maximum="3" Value="1" TickFrequency="0.05" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="MotionCaptureFpsLabel" Text="Capture FPS: 30" />
+                    <Slider x:Name="MotionCaptureFps" Minimum="10" Maximum="60" Value="30" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="MotionDeadZonePixelsLabel" Text="Dead zone (px): 0.5" />
+                    <Slider x:Name="MotionDeadZonePixels" Minimum="0" Maximum="5" Value="0.5" TickFrequency="0.1" ValueChanged="OnAnySettingChanged" />
+
+                    <TextBlock x:Name="MotionMonitorLabel" Text="Capture monitor" />
+                    <ComboBox x:Name="MotionMonitorCaptureIndex" SelectionChanged="OnAnySettingChanged" />
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Window>

@@ -75,6 +75,13 @@ public sealed class SettingsService
         settings.CrosshairThickness = Math.Max(1, settings.CrosshairThickness);
         settings.MonitorIndex = Math.Max(0, settings.MonitorIndex);
 
+        settings.MotionRegionSize = Math.Clamp(settings.MotionRegionSize, 64, 800);
+        settings.MotionSmoothingFrames = Math.Clamp(settings.MotionSmoothingFrames, 1, 30);
+        settings.MotionCancellationIntensity = Math.Clamp(settings.MotionCancellationIntensity, 0, 3);
+        settings.MotionCaptureFps = Math.Clamp(settings.MotionCaptureFps, 10, 60);
+        settings.MotionDeadZonePixels = Math.Clamp(settings.MotionDeadZonePixels, 0, 5);
+        settings.MotionMonitorIndex = Math.Max(0, settings.MotionMonitorIndex);
+
         settings.EnabledMonitorIndices ??= [];
         settings.EnabledMonitorIndices = SanitizeMonitorIndices(settings.EnabledMonitorIndices);
 

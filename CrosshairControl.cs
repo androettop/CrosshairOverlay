@@ -8,10 +8,23 @@ namespace CrosshairOverlay;
 public sealed class CrosshairControl : Control
 {
     private OverlaySettings _settings = new();
+    private double _gridOffsetX;
+    private double _gridOffsetY;
 
     public void ApplySettings(OverlaySettings settings)
     {
         _settings = settings;
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Sets the accumulated motion-compensation offset for the dot grid and redraws.
+    /// The lattice wraps periodically so no clamping is needed.
+    /// </summary>
+    public void SetGridOffset(double offsetX, double offsetY)
+    {
+        _gridOffsetX = offsetX;
+        _gridOffsetY = offsetY;
         InvalidateVisual();
     }
 
@@ -25,6 +38,21 @@ public sealed class CrosshairControl : Control
         DrawDotGrid(context, cx, cy);
         DrawCrosshair(context, cx, cy);
         DrawCenterDot(context, cx, cy);
+        DrawMotionRegionPreview(context, cx, cy);
+    }
+
+    private void DrawMotionRegionPreview(DrawingContext context, double cx, double cy)
+    {
+        if (!_settings.MotionRegionPreview)
+        {
+            return;
+        }
+
+        var rs = Math.Max(8, _settings.MotionRegionSize);
+        var halfRs = rs / 2.0;
+        var fillBrush = new SolidColorBrush(new Color(25, 255, 220, 0));
+        var borderPen = new Pen(new SolidColorBrush(new Color(200, 255, 220, 0)), 1.5);
+        context.DrawRectangle(fillBrush, borderPen, new Rect(cx - halfRs, cy - halfRs, rs, rs));
     }
 
     private void DrawCenterDot(DrawingContext context, double cx, double cy)
@@ -61,37 +89,64 @@ public sealed class CrosshairControl : Control
         var brush = new SolidColorBrush(ParseColor(_settings.DotGridColor, Colors.Lime, _settings.DotGridOpacity));
         var areaShape = _settings.DotGridAreaShape;
 
+        // Motion-compensation offset: reduce to [0, spacing) for periodic wrapping.
+        // The infinite lattice has the same visual appearance for any multiple of spacing,
+        // so we only need the fractional part to determine which dots are visible.
+        var ox = ((_gridOffsetX % spacing) + spacing) % spacing;
+        var oy = ((_gridOffsetY % spacing) + spacing) % spacing;
+
         if (string.Equals(areaShape, "Circle", StringComparison.OrdinalIgnoreCase))
         {
             var radiusPoints = Math.Max(1, _settings.DotGridRadiusPoints);
-            for (var y = -radiusPoints; y <= radiusPoints; y++)
+            // Extend iteration by 1 extra cell in each direction so dots entering
+            // from the opposite side are always included during wrapping.
+            for (var j = -(radiusPoints + 1); j <= radiusPoints + 1; j++)
             {
-                for (var x = -radiusPoints; x <= radiusPoints; x++)
+                for (var i = -(radiusPoints + 1); i <= radiusPoints + 1; i++)
                 {
-                    if ((x * x) + (y * y) > (radiusPoints * radiusPoints))
+                    var dotRelX = ox + i * spacing;
+                    var dotRelY = oy + j * spacing;
+                    var radiusPx = radiusPoints * spacing;
+                    if ((dotRelX * dotRelX) + (dotRelY * dotRelY) > (radiusPx * radiusPx))
                     {
                         continue;
                     }
 
-                    DrawPoint(context, brush, cx + (x * spacing), cy + (y * spacing), pointSize, _settings.DotGridPointShape);
+                    DrawPoint(context, brush, cx + dotRelX, cy + dotRelY, pointSize, _settings.DotGridPointShape);
                 }
             }
 
             return;
         }
 
+        // Rectangle area — dots fill a (columns × rows) grid that wraps periodically.
         var rows = Math.Max(1, _settings.DotGridRows);
         var columns = Math.Max(1, _settings.DotGridColumns);
-        var startX = cx - ((columns - 1) * spacing / 2);
-        var startY = cy - ((rows - 1) * spacing / 2);
+        var halfW = (columns - 1) * spacing / 2.0;
+        var halfH = (rows - 1) * spacing / 2.0;
 
-        for (var row = 0; row < rows; row++)
+        // Iterate one extra column/row beyond the normal range so that the incoming
+        // dot from the opposite side is always present during the wrap transition.
+        var colRange = columns / 2 + 2;
+        var rowRange = rows / 2 + 2;
+
+        for (var j = -rowRange; j <= rowRange; j++)
         {
-            for (var col = 0; col < columns; col++)
+            var dotRelY = oy + j * spacing;
+            if (Math.Abs(dotRelY) > halfH + 0.5)
             {
-                var x = startX + (col * spacing);
-                var y = startY + (row * spacing);
-                DrawPoint(context, brush, x, y, pointSize, _settings.DotGridPointShape);
+                continue;
+            }
+
+            for (var i = -colRange; i <= colRange; i++)
+            {
+                var dotRelX = ox + i * spacing;
+                if (Math.Abs(dotRelX) > halfW + 0.5)
+                {
+                    continue;
+                }
+
+                DrawPoint(context, brush, cx + dotRelX, cy + dotRelY, pointSize, _settings.DotGridPointShape);
             }
         }
     }

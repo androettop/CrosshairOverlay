@@ -53,4 +53,20 @@ public sealed class OverlaySettings
     public string Language { get; set; } = "";
 
     public int MonitorIndex { get; set; } = 0;
+
+    public bool EnableMotionDetection { get; set; } = false;
+
+    public int MotionRegionSize { get; set; } = 200;
+
+    public bool MotionRegionPreview { get; set; } = false;
+
+    public int MotionSmoothingFrames { get; set; } = 5;
+
+    public double MotionCancellationIntensity { get; set; } = 1.0;
+
+    public int MotionCaptureFps { get; set; } = 30;
+
+    public double MotionDeadZonePixels { get; set; } = 0.5;
+
+    public int MotionMonitorIndex { get; set; } = 0;
 }

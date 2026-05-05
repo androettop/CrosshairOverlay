@@ -77,6 +77,16 @@ public partial class ConfigWindow : Window
         CrosshairOpacity.Value = settings.CrosshairOpacity;
         CrosshairColor.Text = settings.CrosshairColor;
 
+        EnableMotionDetection.IsChecked = settings.EnableMotionDetection;
+        MotionRegionPreview.IsChecked = settings.MotionRegionPreview;
+        MotionRegionSize.Value = settings.MotionRegionSize;
+        MotionSmoothingFrames.Value = settings.MotionSmoothingFrames;
+        MotionCancellationIntensity.Value = settings.MotionCancellationIntensity;
+        MotionCaptureFps.Value = settings.MotionCaptureFps;
+        MotionDeadZonePixels.Value = settings.MotionDeadZonePixels;
+        var motionMonitorIdx = Math.Clamp(settings.MotionMonitorIndex, 0, Math.Max(0, MotionMonitorCaptureIndex.Items.Count - 1));
+        MotionMonitorCaptureIndex.SelectedIndex = motionMonitorIdx;
+
         var enabledMonitors = new HashSet<int>(settings.EnabledMonitorIndices ?? []);
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
@@ -139,6 +149,15 @@ public partial class ConfigWindow : Window
             settings.CrosshairOpacity = CrosshairOpacity.Value;
             settings.CrosshairColor = CrosshairColor.Text?.Trim() ?? "#FF0000";
 
+            settings.EnableMotionDetection = EnableMotionDetection.IsChecked ?? false;
+            settings.MotionRegionPreview = MotionRegionPreview.IsChecked ?? false;
+            settings.MotionRegionSize = (int)Math.Round(MotionRegionSize.Value);
+            settings.MotionSmoothingFrames = (int)Math.Round(MotionSmoothingFrames.Value);
+            settings.MotionCancellationIntensity = MotionCancellationIntensity.Value;
+            settings.MotionCaptureFps = (int)Math.Round(MotionCaptureFps.Value);
+            settings.MotionDeadZonePixels = MotionDeadZonePixels.Value;
+            settings.MotionMonitorIndex = Math.Max(0, MotionMonitorCaptureIndex.SelectedIndex);
+
             settings.EnabledMonitorIndices = GetSelectedMonitorIndices();
         });
     }
@@ -154,6 +173,22 @@ public partial class ConfigWindow : Window
             checkBox.IsCheckedChanged += OnAnySettingChanged;
             _monitorCheckBoxes.Add(checkBox);
             MonitorSelectorPanel.Children.Add(checkBox);
+        }
+
+        // Populate motion-capture monitor selector
+        MotionMonitorCaptureIndex.Items.Clear();
+        for (var i = 0; i < _monitorBounds.Count; i++)
+        {
+            var bounds = _monitorBounds[i];
+            MotionMonitorCaptureIndex.Items.Add(new ComboBoxItem
+            {
+                Content = $"Monitor {i + 1} ({bounds.Width}x{bounds.Height})"
+            });
+        }
+
+        if (MotionMonitorCaptureIndex.Items.Count > 0)
+        {
+            MotionMonitorCaptureIndex.SelectedIndex = 0;
         }
 
         ApplyLocalization();
@@ -190,6 +225,12 @@ public partial class ConfigWindow : Window
         CrosshairGapLabel.Text = $"{L("Gap")}: {CrosshairGap.Value:0}";
         CrosshairThicknessLabel.Text = $"{L("Thickness")}: {CrosshairThickness.Value:0}";
         CrosshairOpacityLabel.Text = $"{L("Opacity")}: {CrosshairOpacity.Value:0.00}";
+
+        MotionRegionSizeLabel.Text = $"{L("MotionRegionSize")}: {MotionRegionSize.Value:0}";
+        MotionSmoothingFramesLabel.Text = $"{L("MotionSmoothingFrames")}: {MotionSmoothingFrames.Value:0}";
+        MotionCancellationIntensityLabel.Text = $"{L("MotionCancellationIntensity")}: {MotionCancellationIntensity.Value:0.00}";
+        MotionCaptureFpsLabel.Text = $"{L("MotionCaptureFps")}: {MotionCaptureFps.Value:0}";
+        MotionDeadZonePixelsLabel.Text = $"{L("MotionDeadZonePixels")}: {MotionDeadZonePixels.Value:0.0}";
     }
 
     private void ApplyLocalization()
@@ -222,6 +263,11 @@ public partial class ConfigWindow : Window
         CrosshairTitle.Text = L("Crosshair");
         EnableCrosshair.Content = L("EnableCrosshair");
         CrosshairColorLabel.Text = L("ColorFormat");
+
+        MotionDetectionTitle.Text = L("MotionDetection");
+        EnableMotionDetection.Content = L("EnableMotionDetection");
+        MotionRegionPreview.Content = L("MotionRegionPreview");
+        MotionMonitorLabel.Text = L("MotionMonitorLabel");
 
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
@@ -263,6 +309,15 @@ public partial class ConfigWindow : Window
             (true, "Gap") => "Separacion",
             (true, "Thickness") => "Grosor",
             (true, "Monitor") => "Monitor",
+            (true, "MotionDetection") => "Detección de movimiento",
+            (true, "EnableMotionDetection") => "Activar detección de movimiento",
+            (true, "MotionRegionPreview") => "Mostrar región de captura",
+            (true, "MotionRegionSize") => "Tamaño de región de captura",
+            (true, "MotionSmoothingFrames") => "Suavizado de frames",
+            (true, "MotionCancellationIntensity") => "Intensidad de cancelación",
+            (true, "MotionCaptureFps") => "FPS de captura",
+            (true, "MotionDeadZonePixels") => "Zona muerta (px)",
+            (true, "MotionMonitorLabel") => "Monitor de captura",
 
             (false, "WindowTitle") => "Crosshair Overlay Settings",
             (false, "HeaderTitle") => "Overlay Settings",
@@ -293,6 +348,15 @@ public partial class ConfigWindow : Window
             (false, "Gap") => "Gap",
             (false, "Thickness") => "Thickness",
             (false, "Monitor") => "Monitor",
+            (false, "MotionDetection") => "Motion Detection",
+            (false, "EnableMotionDetection") => "Enable motion detection",
+            (false, "MotionRegionPreview") => "Show capture region",
+            (false, "MotionRegionSize") => "Capture region size",
+            (false, "MotionSmoothingFrames") => "Frame smoothing",
+            (false, "MotionCancellationIntensity") => "Cancellation intensity",
+            (false, "MotionCaptureFps") => "Capture FPS",
+            (false, "MotionDeadZonePixels") => "Dead zone (px)",
+            (false, "MotionMonitorLabel") => "Capture monitor",
 
             _ => key
         };
