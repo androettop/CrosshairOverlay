@@ -3,16 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 
 namespace CrosshairOverlay;
 
 public partial class ConfigWindow : Window
 {
+    private const double PresetPreviewHeight = 168;
+
     private readonly OverlaySettingsStore _settingsStore;
     private readonly IReadOnlyList<PixelRect> _monitorBounds;
     private readonly List<CheckBox> _monitorCheckBoxes = [];
     private readonly List<SearchSection> _searchSections = [];
+    private readonly List<(TextBlock Label, OverlayPreset Preset)> _presetLabels = [];
+    private IImage? _presetBackground;
     private bool _isUpdatingUi;
     private bool _isInitialized;
 
@@ -30,6 +40,7 @@ public partial class ConfigWindow : Window
         Icon = App.TryCreateTrayIcon();
         InitializeSearchSections();
         BuildMonitorSelectors();
+        BuildPresets();
 
         _settingsStore.SettingsChanged += OnStoreSettingsChanged;
         Closed += OnClosed;
@@ -180,10 +191,123 @@ public partial class ConfigWindow : Window
         ApplyLocalization();
     }
 
+    private void BuildPresets()
+    {
+        _presetBackground = TryLoadPresetBackground();
+        PresetsPanel.Children.Clear();
+        _presetLabels.Clear();
+
+        foreach (var preset in OverlayPresets.All)
+        {
+            PresetsPanel.Children.Add(CreatePresetCard(preset));
+        }
+    }
+
+    private Control CreatePresetCard(OverlayPreset preset)
+    {
+        // Build a settings snapshot for the preview by starting from defaults and applying the preset.
+        var previewSettings = new OverlaySettings();
+        preset.Apply(previewSettings);
+
+        var crosshair = new CrosshairControl
+        {
+            Width = OverlayPresets.BasePreviewWidth,
+            Height = OverlayPresets.BasePreviewHeight,
+        };
+        crosshair.ApplySettings(previewSettings);
+
+        var viewbox = new Viewbox
+        {
+            Stretch = Stretch.Uniform,
+            Child = crosshair,
+            RenderTransform = new ScaleTransform(0.75, 0.75),
+            RenderTransformOrigin = new RelativePoint(new Point(0.5, 0.5), RelativeUnit.Relative),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        var previewLayer = new Grid();
+        if (_presetBackground is not null)
+        {
+            previewLayer.Children.Add(new Image
+            {
+                Source = _presetBackground,
+                Stretch = Stretch.UniformToFill,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+            });
+        }
+
+        previewLayer.Children.Add(viewbox);
+
+        var previewContainer = new Border
+        {
+            CornerRadius = new CornerRadius(6),
+            ClipToBounds = true,
+            Height = PresetPreviewHeight,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Child = previewLayer,
+        };
+
+        var nameLabel = new TextBlock
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 4, 0, 0),
+            FontWeight = FontWeight.SemiBold,
+        };
+        _presetLabels.Add((nameLabel, preset));
+
+        var stack = new StackPanel { Spacing = 6 };
+        stack.Children.Add(previewContainer);
+        stack.Children.Add(nameLabel);
+
+        var normalBg = new SolidColorBrush(new Color(255, 25, 28, 36));
+        var hoverBg = new SolidColorBrush(new Color(255, 38, 43, 55));
+
+        var card = new Border
+        {
+            Background = normalBg,
+            BorderBrush = new SolidColorBrush(new Color(255, 52, 58, 68)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(8),
+            Margin = new Thickness(3),
+            Cursor = new Cursor(StandardCursorType.Hand),
+            Child = stack,
+        };
+
+        card.PointerEntered += (_, _) => card.Background = hoverBg;
+        card.PointerExited += (_, _) => card.Background = normalBg;
+        card.PointerReleased += (_, e) =>
+        {
+            if (e.InitialPressMouseButton == MouseButton.Left)
+            {
+                _settingsStore.Update(preset.Apply);
+            }
+        };
+
+        return card;
+    }
+
+    private static IImage? TryLoadPresetBackground()
+    {
+        try
+        {
+            var uri = new Uri("avares://CrosshairOverlay/assets/presets/preset-bg.png");
+            using var stream = AssetLoader.Open(uri);
+            return new Bitmap(stream);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private void InitializeSearchSections()
     {
         _searchSections.Clear();
         _searchSections.Add(new SearchSection(GeneralTab, GeneralCard, ["general", "language", "idioma", "monitor", "monitors", "monitores", "display", "pantalla"]));
+        _searchSections.Add(new SearchSection(GeneralTab, PresetsCard, ["preset", "presets", "preestablecido", "preestablecidos", "plantilla", "plantillas", "ajustes"]));
         _searchSections.Add(new SearchSection(AppearanceTab, CenterDotCard, ["center", "dot", "punto", "center dot", "punto central", "shape", "forma", "size", "tamano", "opacity", "opacidad", "color"]));
         _searchSections.Add(new SearchSection(AppearanceTab, DotGridCard, ["grid", "dot grid", "grilla", "puntos", "spacing", "espaciado", "rows", "filas", "columns", "columnas", "radius", "radio", "color"]));
         _searchSections.Add(new SearchSection(AppearanceTab, CrosshairCard, ["crosshair", "mira", "gap", "separacion", "thickness", "grosor", "length", "largo", "color", "opacity"]));
@@ -359,6 +483,12 @@ public partial class ConfigWindow : Window
         DebugToolsTitle.Text = L("DebugTools");
         DebugShowMotionCapturePreview.Content = L("DebugShowMotionCapturePreview");
 
+        PresetsTitle.Text = L("Presets");
+        foreach (var (label, preset) in _presetLabels)
+        {
+            label.Text = L(preset.NameKey);
+        }
+
         ApplySearch();
 
         var resetTooltip = L("Reset");
@@ -425,6 +555,10 @@ public partial class ConfigWindow : Window
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
             (true, "DebugTools") => "Herramientas de depuración",
             (true, "DebugShowMotionCapturePreview") => "Mostrar preview de la imagen capturada",
+            (true, "Presets") => "Preestablecidos",
+            (true, "Preset_default-crosshair") => "Mira",
+            (true, "Preset_default-dotgrid") => "Grilla de puntos",
+            (true, "Preset_default-centerdot") => "Punto central",
             (true, "SearchNoResults") => "No se encontraron ajustes con esa búsqueda",
             (true, "SearchResultsFormat") => "{0} secciones coinciden",
             (true, "Reset") => "Reiniciar",
@@ -476,6 +610,10 @@ public partial class ConfigWindow : Window
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
             (false, "DebugTools") => "Debug Tools",
             (false, "DebugShowMotionCapturePreview") => "Show captured motion image preview",
+            (false, "Presets") => "Presets",
+            (false, "Preset_default-crosshair") => "Crosshair",
+            (false, "Preset_default-dotgrid") => "Dot Grid",
+            (false, "Preset_default-centerdot") => "Center Dot",
             (false, "SearchNoResults") => "No settings matched that search",
             (false, "SearchResultsFormat") => "{0} matching sections",
             (false, "Reset") => "Reset",
