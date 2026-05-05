@@ -4,166 +4,255 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         x:Class="CrosshairOverlay.ConfigWindow"
-        Width="720"
-        Height="760"
-        MinWidth="560"
-        MinHeight="620"
-        Title="Crosshair Overlay Settings">
-    <ScrollViewer Margin="12">
-        <StackPanel Spacing="14">
-            <TextBlock x:Name="HeaderTitle" Text="Overlay Settings" FontSize="24" FontWeight="Bold" />
-
-            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel Spacing="10">
-                    <TextBlock x:Name="GeneralTitle" Text="General" FontSize="18" FontWeight="SemiBold" />
-
-                    <TextBlock x:Name="LanguageLabel" Text="Language" />
-                    <ComboBox x:Name="Language" SelectionChanged="OnAnySettingChanged">
-                        <ComboBoxItem x:Name="LanguageSpanishItem" Content="Español" Tag="es" />
-                        <ComboBoxItem x:Name="LanguageEnglishItem" Content="English" Tag="en" />
-                    </ComboBox>
-
-                    <TextBlock x:Name="MonitorsLabel" Text="Monitors" />
-                    <StackPanel x:Name="MonitorSelectorPanel" Spacing="6" />
+        Width="680"
+        Height="840"
+        MinWidth="680"
+        MinHeight="680"
+        Title="Crosshair Overlay Settings"
+        RequestedThemeVariant="Dark"
+        Background="#000000">
+    <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="14">
+        <Border Grid.Row="0" Background="#1A1D22" BorderBrush="#343A45" BorderThickness="1" CornerRadius="12" Padding="20">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+                <Image Grid.Column="0" Source="avares://CrosshairOverlay/assets/icons/icon-64.png" Width="64" Height="64" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock x:Name="HeaderTitle" Text="Overlay Settings" FontSize="28" FontWeight="Bold" />
+                    <TextBlock x:Name="HeaderSubtitle" Text="Organize the overlay by area and jump directly to what you need." Opacity="0.78" TextWrapping="Wrap" />
+                    <TextBlock x:Name="SearchHintText" Text="" Opacity="0.78" IsVisible="False" />
                 </StackPanel>
-            </Border>
+            </Grid>
+        </Border>
 
-            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock x:Name="CenterDotTitle" Grid.Column="0" Text="Center Dot" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <Button x:Name="ResetCenterDotButton" Grid.Column="1" Content="↺" Click="OnResetCenterDot" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
-                    </Grid>
-                    <CheckBox x:Name="EnableCenterDot" Content="Enable center dot" IsCheckedChanged="OnAnySettingChanged" />
+        <Border Grid.Row="1" Background="#15181D" BorderBrush="#303640" BorderThickness="1" CornerRadius="10" Padding="16">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
+                <TextBlock x:Name="SearchLabel" Text="Quick search" FontSize="13" FontWeight="SemiBold" Opacity="0.86" />
+                <TextBox Grid.Row="1" x:Name="SearchBox" PlaceholderText="Search settings, for example: motion, color, monitor" TextChanged="OnSearchTextChanged" />
+            </Grid>
+        </Border>
 
-                    <TextBlock x:Name="CenterDotShapeLabel" Text="Shape" />
-                    <ComboBox x:Name="CenterDotShape" SelectedIndex="0" SelectionChanged="OnAnySettingChanged">
-                        <ComboBoxItem x:Name="CenterDotShapeCircleItem" Content="Circle" />
-                        <ComboBoxItem x:Name="CenterDotShapeSquareItem" Content="Square" />
-                    </ComboBox>
+        <Border Grid.Row="2" Background="#111418" BorderBrush="#2D333C" BorderThickness="1" CornerRadius="12" Padding="12">
+            <TabControl x:Name="SettingsTabs">
+                <TabItem x:Name="GeneralTab">
+                    <TabItem.Header>
+                        <TextBlock x:Name="GeneralTabHeader" Text="General" FontWeight="SemiBold" />
+                    </TabItem.Header>
+                    <ScrollViewer Margin="0,8,0,0">
+                        <StackPanel Margin="4" Spacing="14">
+                            <Border x:Name="GeneralCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Name="GeneralTitle" Text="General" FontSize="20" FontWeight="SemiBold" />
 
-                    <TextBlock x:Name="CenterDotSizeLabel" Text="Size: 6" />
-                    <Slider x:Name="CenterDotSize" Minimum="1" Maximum="800" Value="6" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock x:Name="LanguageLabel" Text="Language" />
+                                            <ComboBox x:Name="Language" SelectionChanged="OnAnySettingChanged">
+                                                <ComboBoxItem x:Name="LanguageSpanishItem" Content="Español" Tag="es" />
+                                                <ComboBoxItem x:Name="LanguageEnglishItem" Content="English" Tag="en" />
+                                            </ComboBox>
+                                        </StackPanel>
 
-                    <TextBlock x:Name="CenterDotOpacityLabel" Text="Opacity: 1.00" />
-                    <Slider x:Name="CenterDotOpacity" Minimum="0" Maximum="1" Value="1" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CenterDotColorLabel" Text="Color (#RRGGBB or #AARRGGBB)" />
-                    <TextBox x:Name="CenterDotColor" Text="#FFFFFF" PlaceholderText="#FFFFFF" TextChanged="OnAnySettingChanged" />
-                </StackPanel>
-            </Border>
-
-            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock x:Name="DotGridTitle" Grid.Column="0" Text="Dot Grid" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <Button x:Name="ResetDotGridButton" Grid.Column="1" Content="↺" Click="OnResetDotGrid" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
-                    </Grid>
-                    <CheckBox x:Name="EnableDotGrid" Content="Enable dot grid" IsCheckedChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="DotGridPointShapeLabel" Text="Point shape" />
-                    <ComboBox x:Name="DotGridPointShape" SelectedIndex="0" SelectionChanged="OnAnySettingChanged">
-                        <ComboBoxItem x:Name="DotGridPointShapeCircleItem" Content="Circle" />
-                        <ComboBoxItem x:Name="DotGridPointShapeSquareItem" Content="Square" />
-                    </ComboBox>
-
-                    <TextBlock x:Name="DotGridAreaShapeLabel" Text="Grid area shape" />
-                    <ComboBox x:Name="DotGridAreaShape" SelectedIndex="0" SelectionChanged="OnDotGridAreaShapeChanged">
-                        <ComboBoxItem x:Name="DotGridAreaSquareItem" Content="Square" />
-                        <ComboBoxItem x:Name="DotGridAreaCircleItem" Content="Circle" />
-                    </ComboBox>
-
-                    <TextBlock x:Name="DotGridPointSizeLabel" Text="Point size: 3" />
-                    <Slider x:Name="DotGridPointSize" Minimum="1" Maximum="200" Value="3" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="DotGridSpacingLabel" Text="Point spacing: 10" />
-                    <Slider x:Name="DotGridSpacing" Minimum="1" Maximum="250" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                    <StackPanel x:Name="DotGridSquarePanel" Spacing="8">
-                        <TextBlock x:Name="DotGridRowsLabel" Text="Rows: 7" />
-                        <Slider x:Name="DotGridRows" Minimum="1" Maximum="120" Value="7" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                        <TextBlock x:Name="DotGridColumnsLabel" Text="Columns: 7" />
-                        <Slider x:Name="DotGridColumns" Minimum="1" Maximum="120" Value="7" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-                    </StackPanel>
-
-                    <StackPanel x:Name="DotGridCirclePanel" Spacing="8">
-                        <TextBlock x:Name="DotGridRadiusPointsLabel" Text="Radius points: 4" />
-                        <Slider x:Name="DotGridRadiusPoints" Minimum="1" Maximum="80" Value="4" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-                    </StackPanel>
-
-                    <TextBlock x:Name="DotGridOpacityLabel" Text="Opacity: 0.80" />
-                    <Slider x:Name="DotGridOpacity" Minimum="0" Maximum="1" Value="0.8" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="DotGridColorLabel" Text="Color (#RRGGBB or #AARRGGBB)" />
-                    <TextBox x:Name="DotGridColor" Text="#00FF00" PlaceholderText="#00FF00" TextChanged="OnAnySettingChanged" />
-                </StackPanel>
-            </Border>
-
-            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <TextBlock x:Name="CrosshairTitle" Grid.Column="0" Text="Crosshair" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <Button x:Name="ResetCrosshairButton" Grid.Column="1" Content="↺" Click="OnResetCrosshair" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
-                    </Grid>
-                    <CheckBox x:Name="EnableCrosshair" Content="Enable crosshair" IsCheckedChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CrosshairHorizontalLengthLabel" Text="Horizontal length: 16" />
-                    <Slider x:Name="CrosshairHorizontalLength" Minimum="0" Maximum="2000" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CrosshairVerticalLengthLabel" Text="Vertical length: 16" />
-                    <Slider x:Name="CrosshairVerticalLength" Minimum="0" Maximum="2000" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CrosshairGapLabel" Text="Gap: 4" />
-                    <Slider x:Name="CrosshairGap" Minimum="0" Maximum="800" Value="4" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CrosshairThicknessLabel" Text="Thickness: 2" />
-                    <Slider x:Name="CrosshairThickness" Minimum="1" Maximum="800" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CrosshairOpacityLabel" Text="Opacity: 0.90" />
-                    <Slider x:Name="CrosshairOpacity" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
-
-                    <TextBlock x:Name="CrosshairColorLabel" Text="Color (#RRGGBB or #AARRGGBB)" />
-                    <TextBox x:Name="CrosshairColor" Text="#FF0000" PlaceholderText="#FF0000" TextChanged="OnAnySettingChanged" />
-                </StackPanel>
-            </Border>
-
-            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <TextBlock x:Name="MotionDetectionTitle" Text="Motion Detection" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <TextBlock x:Name="MotionDetectionExperimentalLabel" Text="(Experimental)" FontSize="13" Opacity="0.55" VerticalAlignment="Center" />
+                                        <StackPanel Grid.Column="1" Spacing="8">
+                                            <TextBlock x:Name="MonitorsLabel" Text="Monitors" />
+                                            <StackPanel x:Name="MonitorSelectorPanel" Spacing="6" />
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
-                        <Button x:Name="ResetMotionDetectionButton" Grid.Column="1" Content="↺" Click="OnResetMotionDetection" VerticalAlignment="Center" Padding="8,2" ToolTip.Tip="Reset" />
-                    </Grid>
-                    <CheckBox x:Name="EnableMotionDetection" Content="Enable motion detection" IsCheckedChanged="OnAnySettingChanged" />
-                    <CheckBox x:Name="MotionRegionPreview" Content="Show capture region" IsCheckedChanged="OnAnySettingChanged" />
+                    </ScrollViewer>
+                </TabItem>
 
-                    <TextBlock x:Name="MotionRegionSizeLabel" Text="Capture region size: 200" />
-                    <Slider x:Name="MotionRegionSize" Minimum="64" Maximum="800" Value="200" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                <TabItem x:Name="AppearanceTab">
+                    <TabItem.Header>
+                        <TextBlock x:Name="AppearanceTabHeader" Text="Appearance" FontWeight="SemiBold" />
+                    </TabItem.Header>
+                    <ScrollViewer Margin="0,8,0,0">
+                        <StackPanel Margin="4" Spacing="14">
+                            <Border x:Name="CenterDotCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock x:Name="CenterDotTitle" Grid.Column="0" Text="Center Dot" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <Button x:Name="ResetCenterDotButton" Grid.Column="1" Content="↺" Click="OnResetCenterDot" VerticalAlignment="Center" Padding="10,4" ToolTip.Tip="Reset" />
+                                    </Grid>
 
-                    <TextBlock x:Name="MotionSmoothingFramesLabel" Text="Frame smoothing: 5" />
-                    <Slider x:Name="MotionSmoothingFrames" Minimum="1" Maximum="30" Value="5" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                    <CheckBox x:Name="EnableCenterDot" Content="Enable center dot" IsCheckedChanged="OnAnySettingChanged" />
 
-                    <TextBlock x:Name="MotionCancellationIntensityLabel" Text="Cancellation intensity: 1.00" />
-                    <Slider x:Name="MotionCancellationIntensity" Minimum="-1" Maximum="1" Value="1" TickFrequency="0.05" ValueChanged="OnAnySettingChanged" />
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock x:Name="CenterDotShapeLabel" Text="Shape" />
+                                            <ComboBox x:Name="CenterDotShape" SelectedIndex="0" SelectionChanged="OnAnySettingChanged">
+                                                <ComboBoxItem x:Name="CenterDotShapeCircleItem" Content="Circle" />
+                                                <ComboBoxItem x:Name="CenterDotShapeSquareItem" Content="Square" />
+                                            </ComboBox>
+                                        </StackPanel>
 
-                    <TextBlock x:Name="MotionCaptureFpsLabel" Text="Capture FPS: 30" />
-                    <Slider x:Name="MotionCaptureFps" Minimum="10" Maximum="60" Value="30" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                        <StackPanel Grid.Column="1" Spacing="8">
+                                            <TextBlock x:Name="CenterDotColorLabel" Text="Color (#RRGGBB or #AARRGGBB)" />
+                                            <TextBox x:Name="CenterDotColor" Text="#FFFFFF" PlaceholderText="#FFFFFF" TextChanged="OnAnySettingChanged" />
+                                        </StackPanel>
+                                    </Grid>
 
-                    <TextBlock x:Name="MotionDeadZonePixelsLabel" Text="Dead zone (px): 0.5" />
-                    <Slider x:Name="MotionDeadZonePixels" Minimum="0" Maximum="5" Value="0.5" TickFrequency="0.1" ValueChanged="OnAnySettingChanged" />
+                                    <TextBlock x:Name="CenterDotSizeLabel" Text="Size: 6" />
+                                    <Slider x:Name="CenterDotSize" Minimum="1" Maximum="800" Value="6" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
 
-                </StackPanel>
-            </Border>
+                                    <TextBlock x:Name="CenterDotOpacityLabel" Text="Opacity: 1.00" />
+                                    <Slider x:Name="CenterDotOpacity" Minimum="0" Maximum="1" Value="1" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
+                                </StackPanel>
+                            </Border>
 
-            <Border BorderBrush="#445" BorderThickness="1" CornerRadius="8" Padding="12">
-                <StackPanel Spacing="10">
-                    <TextBlock x:Name="DebugToolsTitle" Text="Debug Tools" FontSize="18" FontWeight="SemiBold" />
-                    <CheckBox x:Name="DebugShowMotionCapturePreview" Content="Show captured motion image preview" IsCheckedChanged="OnAnySettingChanged" />
-                </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+                            <Border x:Name="DotGridCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock x:Name="DotGridTitle" Grid.Column="0" Text="Dot Grid" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <Button x:Name="ResetDotGridButton" Grid.Column="1" Content="↺" Click="OnResetDotGrid" VerticalAlignment="Center" Padding="10,4" ToolTip.Tip="Reset" />
+                                    </Grid>
+
+                                    <CheckBox x:Name="EnableDotGrid" Content="Enable dot grid" IsCheckedChanged="OnAnySettingChanged" />
+
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock x:Name="DotGridPointShapeLabel" Text="Point shape" />
+                                            <ComboBox x:Name="DotGridPointShape" SelectedIndex="0" SelectionChanged="OnAnySettingChanged">
+                                                <ComboBoxItem x:Name="DotGridPointShapeCircleItem" Content="Circle" />
+                                                <ComboBoxItem x:Name="DotGridPointShapeSquareItem" Content="Square" />
+                                            </ComboBox>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Spacing="8">
+                                            <TextBlock x:Name="DotGridAreaShapeLabel" Text="Grid area shape" />
+                                            <ComboBox x:Name="DotGridAreaShape" SelectedIndex="0" SelectionChanged="OnDotGridAreaShapeChanged">
+                                                <ComboBoxItem x:Name="DotGridAreaSquareItem" Content="Square" />
+                                                <ComboBoxItem x:Name="DotGridAreaCircleItem" Content="Circle" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock x:Name="DotGridPointSizeLabel" Text="Point size: 3" />
+                                            <Slider x:Name="DotGridPointSize" Minimum="1" Maximum="200" Value="3" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Spacing="8">
+                                            <TextBlock x:Name="DotGridSpacingLabel" Text="Point spacing: 10" />
+                                            <Slider x:Name="DotGridSpacing" Minimum="1" Maximum="250" Value="10" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <StackPanel x:Name="DotGridSquarePanel" Spacing="8">
+                                        <TextBlock x:Name="DotGridRowsLabel" Text="Rows: 7" />
+                                        <Slider x:Name="DotGridRows" Minimum="1" Maximum="120" Value="7" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                        <TextBlock x:Name="DotGridColumnsLabel" Text="Columns: 7" />
+                                        <Slider x:Name="DotGridColumns" Minimum="1" Maximum="120" Value="7" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                    </StackPanel>
+
+                                    <StackPanel x:Name="DotGridCirclePanel" Spacing="8">
+                                        <TextBlock x:Name="DotGridRadiusPointsLabel" Text="Radius points: 4" />
+                                        <Slider x:Name="DotGridRadiusPoints" Minimum="1" Maximum="80" Value="4" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                    </StackPanel>
+
+                                    <TextBlock x:Name="DotGridOpacityLabel" Text="Opacity: 0.80" />
+                                    <Slider x:Name="DotGridOpacity" Minimum="0" Maximum="1" Value="0.8" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="DotGridColorLabel" Text="Color (#RRGGBB or #AARRGGBB)" />
+                                    <TextBox x:Name="DotGridColor" Text="#00FF00" PlaceholderText="#00FF00" TextChanged="OnAnySettingChanged" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border x:Name="CrosshairCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock x:Name="CrosshairTitle" Grid.Column="0" Text="Crosshair" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <Button x:Name="ResetCrosshairButton" Grid.Column="1" Content="↺" Click="OnResetCrosshair" VerticalAlignment="Center" Padding="10,4" ToolTip.Tip="Reset" />
+                                    </Grid>
+
+                                    <CheckBox x:Name="EnableCrosshair" Content="Enable crosshair" IsCheckedChanged="OnAnySettingChanged" />
+
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock x:Name="CrosshairColorLabel" Text="Color (#RRGGBB or #AARRGGBB)" />
+                                            <TextBox x:Name="CrosshairColor" Text="#FF0000" PlaceholderText="#FF0000" TextChanged="OnAnySettingChanged" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Spacing="8">
+                                            <TextBlock x:Name="CrosshairOpacityLabel" Text="Opacity: 0.90" />
+                                            <Slider x:Name="CrosshairOpacity" Minimum="0" Maximum="1" Value="0.9" TickFrequency="0.01" ValueChanged="OnAnySettingChanged" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock x:Name="CrosshairHorizontalLengthLabel" Text="Horizontal length: 16" />
+                                    <Slider x:Name="CrosshairHorizontalLength" Minimum="0" Maximum="2000" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="CrosshairVerticalLengthLabel" Text="Vertical length: 16" />
+                                    <Slider x:Name="CrosshairVerticalLength" Minimum="0" Maximum="2000" Value="16" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="CrosshairGapLabel" Text="Gap: 4" />
+                                    <Slider x:Name="CrosshairGap" Minimum="0" Maximum="800" Value="4" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="CrosshairThicknessLabel" Text="Thickness: 2" />
+                                    <Slider x:Name="CrosshairThickness" Minimum="1" Maximum="800" Value="2" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem x:Name="MotionTab">
+                    <TabItem.Header>
+                        <TextBlock x:Name="MotionTabHeader" Text="Motion" FontWeight="SemiBold" />
+                    </TabItem.Header>
+                    <ScrollViewer Margin="0,8,0,0">
+                        <StackPanel Margin="4" Spacing="14">
+                            <Border x:Name="MotionDetectionCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <TextBlock x:Name="MotionDetectionTitle" Text="Motion Detection" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                            <TextBlock x:Name="MotionDetectionExperimentalLabel" Text="(Experimental)" FontSize="13" Opacity="0.55" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                        <Button x:Name="ResetMotionDetectionButton" Grid.Column="1" Content="↺" Click="OnResetMotionDetection" VerticalAlignment="Center" Padding="10,4" ToolTip.Tip="Reset" />
+                                    </Grid>
+
+                                    <CheckBox x:Name="EnableMotionDetection" Content="Enable motion detection" IsCheckedChanged="OnAnySettingChanged" />
+                                    <CheckBox x:Name="MotionRegionPreview" Content="Show capture region" IsCheckedChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="MotionRegionSizeLabel" Text="Capture region size: 200" />
+                                    <Slider x:Name="MotionRegionSize" Minimum="64" Maximum="800" Value="200" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="MotionSmoothingFramesLabel" Text="Frame smoothing: 5" />
+                                    <Slider x:Name="MotionSmoothingFrames" Minimum="1" Maximum="30" Value="5" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="MotionCancellationIntensityLabel" Text="Cancellation intensity: 1.00" />
+                                    <Slider x:Name="MotionCancellationIntensity" Minimum="-1" Maximum="1" Value="1" TickFrequency="0.05" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="MotionCaptureFpsLabel" Text="Capture FPS: 30" />
+                                    <Slider x:Name="MotionCaptureFps" Minimum="10" Maximum="60" Value="30" TickFrequency="1" IsSnapToTickEnabled="True" ValueChanged="OnAnySettingChanged" />
+
+                                    <TextBlock x:Name="MotionDeadZonePixelsLabel" Text="Dead zone (px): 0.5" />
+                                    <Slider x:Name="MotionDeadZonePixels" Minimum="0" Maximum="5" Value="0.5" TickFrequency="0.1" ValueChanged="OnAnySettingChanged" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <TabItem x:Name="DebugTab">
+                    <TabItem.Header>
+                        <TextBlock x:Name="DebugTabHeader" Text="Debug" FontWeight="SemiBold" />
+                    </TabItem.Header>
+                    <ScrollViewer Margin="0,8,0,0">
+                        <StackPanel Margin="4" Spacing="14">
+                            <Border x:Name="DebugToolsCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Name="DebugToolsTitle" Text="Debug Tools" FontSize="20" FontWeight="SemiBold" />
+                                    <CheckBox x:Name="DebugShowMotionCapturePreview" Content="Show captured motion image preview" IsCheckedChanged="OnAnySettingChanged" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+        </Border>
+    </Grid>
 </Window>

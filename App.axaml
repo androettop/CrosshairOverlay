@@ -18,6 +18,11 @@
     </NativeMenu.Menu>
 
     <Application.Styles>
-        <FluentTheme />
+        <FluentTheme>
+            <FluentTheme.Palettes>
+                <ColorPaletteResources x:Key="Light" Accent="#356AC4" />
+                <ColorPaletteResources x:Key="Dark" Accent="#356AC4" />
+            </FluentTheme.Palettes>
+        </FluentTheme>
     </Application.Styles>
 </Application>

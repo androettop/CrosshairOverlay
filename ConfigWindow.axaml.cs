@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -11,6 +12,7 @@ public partial class ConfigWindow : Window
     private readonly OverlaySettingsStore _settingsStore;
     private readonly IReadOnlyList<PixelRect> _monitorBounds;
     private readonly List<CheckBox> _monitorCheckBoxes = [];
+    private readonly List<SearchSection> _searchSections = [];
     private bool _isUpdatingUi;
     private bool _isInitialized;
 
@@ -26,6 +28,7 @@ public partial class ConfigWindow : Window
         _isUpdatingUi = true;
         InitializeComponent();
         Icon = App.TryCreateTrayIcon();
+        InitializeSearchSections();
         BuildMonitorSelectors();
 
         _settingsStore.SettingsChanged += OnStoreSettingsChanged;
@@ -94,6 +97,7 @@ public partial class ConfigWindow : Window
         ApplyLocalization();
         UpdateLabels();
         UpdateDotGridAreaEditors();
+        ApplySearch();
 
         _isUpdatingUi = false;
     }
@@ -176,6 +180,100 @@ public partial class ConfigWindow : Window
         ApplyLocalization();
     }
 
+    private void InitializeSearchSections()
+    {
+        _searchSections.Clear();
+        _searchSections.Add(new SearchSection(GeneralTab, GeneralCard, ["general", "language", "idioma", "monitor", "monitors", "monitores", "display", "pantalla"]));
+        _searchSections.Add(new SearchSection(AppearanceTab, CenterDotCard, ["center", "dot", "punto", "center dot", "punto central", "shape", "forma", "size", "tamano", "opacity", "opacidad", "color"]));
+        _searchSections.Add(new SearchSection(AppearanceTab, DotGridCard, ["grid", "dot grid", "grilla", "puntos", "spacing", "espaciado", "rows", "filas", "columns", "columnas", "radius", "radio", "color"]));
+        _searchSections.Add(new SearchSection(AppearanceTab, CrosshairCard, ["crosshair", "mira", "gap", "separacion", "thickness", "grosor", "length", "largo", "color", "opacity"]));
+        _searchSections.Add(new SearchSection(MotionTab, MotionDetectionCard, ["motion", "movement", "movimiento", "detection", "deteccion", "capture", "captura", "fps", "smoothing", "suavizado", "dead zone", "zona muerta"]));
+        _searchSections.Add(new SearchSection(DebugTab, DebugToolsCard, ["debug", "preview", "herramientas", "depuracion", "captured", "imagen"]));
+    }
+
+    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    {
+        ApplySearch();
+    }
+
+    private void ApplySearch()
+    {
+        var query = NormalizeSearch(SearchBox.Text);
+        if (string.IsNullOrEmpty(query))
+        {
+            foreach (var section in _searchSections)
+            {
+                section.Card.IsVisible = true;
+                section.Tab.IsVisible = true;
+            }
+
+            SearchHintText.IsVisible = false;
+            return;
+        }
+
+        var matchesByTab = new Dictionary<TabItem, int>();
+        SearchSection? firstMatch = null;
+        var totalMatches = 0;
+
+        foreach (var section in _searchSections)
+        {
+            var matches = MatchesSearch(section.Keywords, query);
+            section.Card.IsVisible = matches;
+            if (!matches)
+            {
+                continue;
+            }
+
+            if (!matchesByTab.TryAdd(section.Tab, 1))
+            {
+                matchesByTab[section.Tab]++;
+            }
+
+            firstMatch ??= section;
+            totalMatches++;
+        }
+
+        if (firstMatch is null)
+        {
+            foreach (var section in _searchSections)
+            {
+                section.Tab.IsVisible = true;
+            }
+
+            SearchHintText.Text = L("SearchNoResults");
+            SearchHintText.IsVisible = true;
+            return;
+        }
+
+        foreach (var section in _searchSections)
+        {
+            section.Tab.IsVisible = matchesByTab.ContainsKey(section.Tab);
+        }
+
+        SettingsTabs.SelectedItem = firstMatch.Tab;
+        SearchHintText.Text = string.Format(L("SearchResultsFormat"), totalMatches);
+        SearchHintText.IsVisible = true;
+    }
+
+    private static string NormalizeSearch(string? value)
+    {
+        return value?.Trim().ToLowerInvariant() ?? string.Empty;
+    }
+
+    private static bool MatchesSearch(IEnumerable<string> keywords, string query)
+    {
+        foreach (var keyword in keywords)
+        {
+            var normalizedKeyword = keyword.ToLowerInvariant();
+            if (normalizedKeyword.Contains(query, StringComparison.Ordinal) || query.Contains(normalizedKeyword, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private List<int> GetSelectedMonitorIndices()
     {
         var selected = new List<int>();
@@ -219,6 +317,13 @@ public partial class ConfigWindow : Window
     {
         Title = L("WindowTitle");
         HeaderTitle.Text = L("HeaderTitle");
+        HeaderSubtitle.Text = L("HeaderSubtitle");
+        SearchLabel.Text = L("SearchLabel");
+        SearchBox.PlaceholderText = L("SearchWatermark");
+        GeneralTabHeader.Text = L("GeneralTab");
+        AppearanceTabHeader.Text = L("AppearanceTab");
+        MotionTabHeader.Text = L("MotionTab");
+        DebugTabHeader.Text = L("DebugTab");
         GeneralTitle.Text = L("General");
         LanguageLabel.Text = L("Language");
         MonitorsLabel.Text = L("Monitors");
@@ -254,6 +359,8 @@ public partial class ConfigWindow : Window
         DebugToolsTitle.Text = L("DebugTools");
         DebugShowMotionCapturePreview.Content = L("DebugShowMotionCapturePreview");
 
+        ApplySearch();
+
         var resetTooltip = L("Reset");
         ToolTip.SetTip(ResetCenterDotButton, resetTooltip);
         ToolTip.SetTip(ResetDotGridButton, resetTooltip);
@@ -273,6 +380,13 @@ public partial class ConfigWindow : Window
         {
             (true, "WindowTitle") => "Ajustes de Crosshair Overlay",
             (true, "HeaderTitle") => "Ajustes de Overlay",
+            (true, "HeaderSubtitle") => "Organiza el overlay por áreas y salta directo a lo que necesitas.",
+            (true, "SearchLabel") => "Búsqueda rápida",
+            (true, "SearchWatermark") => "Buscar ajustes, por ejemplo: movimiento, color o monitor",
+            (true, "GeneralTab") => "General",
+            (true, "AppearanceTab") => "Apariencia",
+            (true, "MotionTab") => "Movimiento",
+            (true, "DebugTab") => "Depuración",
             (true, "General") => "General",
             (true, "Language") => "Idioma",
             (true, "Monitors") => "Monitores",
@@ -311,10 +425,19 @@ public partial class ConfigWindow : Window
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
             (true, "DebugTools") => "Herramientas de depuración",
             (true, "DebugShowMotionCapturePreview") => "Mostrar preview de la imagen capturada",
+            (true, "SearchNoResults") => "No se encontraron ajustes con esa búsqueda",
+            (true, "SearchResultsFormat") => "{0} secciones coinciden",
             (true, "Reset") => "Reiniciar",
 
             (false, "WindowTitle") => "Crosshair Overlay Settings",
             (false, "HeaderTitle") => "Overlay Settings",
+            (false, "HeaderSubtitle") => "Organize the overlay by area and jump directly to what you need.",
+            (false, "SearchLabel") => "Quick search",
+            (false, "SearchWatermark") => "Search settings, for example: motion, color or monitor",
+            (false, "GeneralTab") => "General",
+            (false, "AppearanceTab") => "Appearance",
+            (false, "MotionTab") => "Motion",
+            (false, "DebugTab") => "Debug",
             (false, "General") => "General",
             (false, "Language") => "Language",
             (false, "Monitors") => "Monitors",
@@ -353,6 +476,8 @@ public partial class ConfigWindow : Window
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
             (false, "DebugTools") => "Debug Tools",
             (false, "DebugShowMotionCapturePreview") => "Show captured motion image preview",
+            (false, "SearchNoResults") => "No settings matched that search",
+            (false, "SearchResultsFormat") => "{0} matching sections",
             (false, "Reset") => "Reset",
 
             _ => key
@@ -444,4 +569,6 @@ public partial class ConfigWindow : Window
             s.MotionDeadZonePixels = d.MotionDeadZonePixels;
         });
     }
+
+    private sealed record SearchSection(TabItem Tab, Control Card, string[] Keywords);
 }
