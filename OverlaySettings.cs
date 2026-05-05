@@ -125,6 +125,7 @@ public sealed class OverlaySettings
     public bool DebugShowMotionCapturePreview { get; set; } = false;
     public bool DebugAllowConfigWindowCapture { get; set; } = false;
     public bool DebugAllowOverlayCapture { get; set; } = false;
+    public bool DebugTabUnlocked { get; set; } = false;
 
     public List<UserPreset> UserPresets { get; set; } = [];
 }

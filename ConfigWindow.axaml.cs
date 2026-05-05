@@ -16,12 +16,15 @@ namespace CrosshairOverlay;
 public partial class ConfigWindow : Window
 {
     private const double PresetPreviewHeight = 154;
+    private static readonly TimeSpan DebugUnlockWindow = TimeSpan.FromSeconds(5);
+    private const int DebugUnlockClickCount = 10;
 
     private readonly OverlaySettingsStore _settingsStore;
     private readonly IReadOnlyList<PixelRect> _monitorBounds;
     private readonly List<CheckBox> _monitorCheckBoxes = [];
     private readonly List<SearchSection> _searchSections = [];
     private readonly List<(TextBlock Label, OverlayPreset Preset)> _presetLabels = [];
+    private readonly Queue<DateTime> _debugUnlockClicks = [];
     private IImage? _presetBackground;
     private bool _isUpdatingUi;
     private bool _isInitialized;
@@ -38,6 +41,7 @@ public partial class ConfigWindow : Window
         _isUpdatingUi = true;
         InitializeComponent();
         Icon = App.TryCreateTrayIcon();
+        HeaderLogo.PointerReleased += OnHeaderLogoPointerReleased;
         InitializeSearchSections();
         BuildMonitorSelectors();
         BuildPresets();
@@ -101,6 +105,7 @@ public partial class ConfigWindow : Window
         DebugShowMotionCapturePreview.IsChecked = settings.DebugShowMotionCapturePreview;
         DebugAllowConfigWindowCapture.IsChecked = settings.DebugAllowConfigWindowCapture;
         DebugAllowOverlayCapture.IsChecked = settings.DebugAllowOverlayCapture;
+        UpdateDebugTabVisibility(settings.DebugTabUnlocked);
         var enabledMonitors = new HashSet<int>(settings.EnabledMonitorIndices ?? []);
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
@@ -124,6 +129,46 @@ public partial class ConfigWindow : Window
 
         UpdateDotGridAreaEditors();
         OnAnySettingChanged(sender, e);
+    }
+
+    private void OnHeaderLogoPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (e.InitialPressMouseButton != MouseButton.Left || _settingsStore.Current.DebugTabUnlocked)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        _debugUnlockClicks.Enqueue(now);
+        while (_debugUnlockClicks.Count > 0 && now - _debugUnlockClicks.Peek() > DebugUnlockWindow)
+        {
+            _debugUnlockClicks.Dequeue();
+        }
+
+        if (_debugUnlockClicks.Count < DebugUnlockClickCount)
+        {
+            return;
+        }
+
+        _debugUnlockClicks.Clear();
+        _settingsStore.Update(settings => settings.DebugTabUnlocked = true);
+    }
+
+    private void OnHideDebugTab(object? sender, RoutedEventArgs e)
+    {
+        SettingsTabs.SelectedItem = GeneralTab;
+        _settingsStore.Update(settings => settings.DebugTabUnlocked = false);
+    }
+
+    private void UpdateDebugTabVisibility(bool isUnlocked)
+    {
+        if (!isUnlocked && ReferenceEquals(SettingsTabs.SelectedItem, DebugTab))
+        {
+            SettingsTabs.SelectedItem = GeneralTab;
+        }
+
+        DebugTab.IsVisible = isUnlocked;
+        DebugTabHeader.IsVisible = isUnlocked;
     }
 
     private void OnAnySettingChanged(object? sender, RoutedEventArgs e)
@@ -650,12 +695,13 @@ public partial class ConfigWindow : Window
     private void ApplySearch()
     {
         var query = NormalizeSearch(SearchBox.Text);
+        var debugUnlocked = _settingsStore.Current.DebugTabUnlocked;
         if (string.IsNullOrEmpty(query))
         {
             foreach (var section in _searchSections)
             {
                 section.Card.IsVisible = true;
-                section.Tab.IsVisible = true;
+                section.Tab.IsVisible = !ReferenceEquals(section.Tab, DebugTab) || debugUnlocked;
             }
 
             SearchHintText.IsVisible = false;
@@ -688,7 +734,7 @@ public partial class ConfigWindow : Window
         {
             foreach (var section in _searchSections)
             {
-                section.Tab.IsVisible = true;
+                section.Tab.IsVisible = !ReferenceEquals(section.Tab, DebugTab) || debugUnlocked;
             }
 
             SearchHintText.Text = L("SearchNoResults");
@@ -698,7 +744,13 @@ public partial class ConfigWindow : Window
 
         foreach (var section in _searchSections)
         {
-            section.Tab.IsVisible = matchesByTab.ContainsKey(section.Tab);
+            var tabVisible = matchesByTab.ContainsKey(section.Tab);
+            if (ReferenceEquals(section.Tab, DebugTab) && !debugUnlocked)
+            {
+                tabVisible = false;
+            }
+
+            section.Tab.IsVisible = tabVisible;
         }
 
         SettingsTabs.SelectedItem = firstMatch.Tab;
@@ -811,6 +863,7 @@ public partial class ConfigWindow : Window
         DebugShowMotionCapturePreview.Content = L("DebugShowMotionCapturePreview");
         DebugAllowConfigWindowCapture.Content = L("DebugAllowConfigWindowCapture");
         DebugAllowOverlayCapture.Content = L("DebugAllowOverlayCapture");
+        HideDebugTabButton.Content = L("HideDebugTab");
 
         PresetsTitle.Text = L("Presets");
         foreach (var (label, preset) in _presetLabels)
@@ -886,6 +939,7 @@ public partial class ConfigWindow : Window
             (true, "DebugShowMotionCapturePreview") => "Mostrar preview de la imagen capturada",
             (true, "DebugAllowConfigWindowCapture") => "Permitir capturar la ventana de configuración",
             (true, "DebugAllowOverlayCapture") => "Permitir capturar los overlays",
+            (true, "HideDebugTab") => "Ocultar tab de depuración",
             (true, "Presets") => "Preestablecidos",
             (true, "Preset_default-crosshair") => "Mira",
             (true, "Preset_default-dotgrid") => "Grilla de puntos",
@@ -950,6 +1004,7 @@ public partial class ConfigWindow : Window
             (false, "DebugShowMotionCapturePreview") => "Show captured motion image preview",
             (false, "DebugAllowConfigWindowCapture") => "Allow capturing the config window",
             (false, "DebugAllowOverlayCapture") => "Allow capturing overlays",
+            (false, "HideDebugTab") => "Hide Debug tab",
             (false, "Presets") => "Presets",
             (false, "Preset_default-crosshair") => "Crosshair",
             (false, "Preset_default-dotgrid") => "Dot Grid",

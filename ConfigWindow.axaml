@@ -15,7 +15,7 @@
     <Grid Margin="16" RowDefinitions="Auto,Auto,*" RowSpacing="14">
         <Border Grid.Row="0" Background="#1A1D22" BorderBrush="#343A45" BorderThickness="1" CornerRadius="12" Padding="20">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                <Image Grid.Column="0" Source="avares://CrosshairOverlay/assets/icons/icon-64.png" Width="64" Height="64" VerticalAlignment="Center" />
+                <Image x:Name="HeaderLogo" Grid.Column="0" Source="avares://CrosshairOverlay/assets/icons/icon-64.png" Width="64" Height="64" VerticalAlignment="Center" />
                 <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
                     <TextBlock x:Name="HeaderTitle" Text="Overlay Settings" FontSize="28" FontWeight="Bold" />
                     <TextBlock x:Name="HeaderSubtitle" Text="Organize the overlay by area and jump directly to what you need." Opacity="0.78" TextWrapping="Wrap" />
@@ -259,6 +259,7 @@
                                     <CheckBox x:Name="DebugShowMotionCapturePreview" Content="Show captured motion image preview" IsCheckedChanged="OnAnySettingChanged" />
                                     <CheckBox x:Name="DebugAllowConfigWindowCapture" Content="Allow capturing the config window" IsCheckedChanged="OnAnySettingChanged" />
                                     <CheckBox x:Name="DebugAllowOverlayCapture" Content="Allow capturing overlays" IsCheckedChanged="OnAnySettingChanged" />
+                                    <Button x:Name="HideDebugTabButton" Content="Hide Debug tab" Click="OnHideDebugTab" HorizontalAlignment="Left" Padding="10,4" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
