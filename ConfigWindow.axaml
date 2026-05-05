@@ -257,6 +257,8 @@
                                 <StackPanel Spacing="12">
                                     <TextBlock x:Name="DebugToolsTitle" Text="Debug Tools" FontSize="20" FontWeight="SemiBold" />
                                     <CheckBox x:Name="DebugShowMotionCapturePreview" Content="Show captured motion image preview" IsCheckedChanged="OnAnySettingChanged" />
+                                    <CheckBox x:Name="DebugAllowConfigWindowCapture" Content="Allow capturing the config window" IsCheckedChanged="OnAnySettingChanged" />
+                                    <CheckBox x:Name="DebugAllowOverlayCapture" Content="Allow capturing overlays" IsCheckedChanged="OnAnySettingChanged" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

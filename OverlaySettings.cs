@@ -44,6 +44,8 @@ public sealed class PresetValues
 
     // Debug
     public bool DebugShowMotionCapturePreview { get; set; }
+    public bool DebugAllowConfigWindowCapture { get; set; }
+    public bool DebugAllowOverlayCapture { get; set; }
 }
 
 /// <summary>A user-defined preset saved from the current configuration.</summary>
@@ -121,6 +123,8 @@ public sealed class OverlaySettings
     public double MotionDeadZonePixels { get; set; } = 0.5;
 
     public bool DebugShowMotionCapturePreview { get; set; } = false;
+    public bool DebugAllowConfigWindowCapture { get; set; } = false;
+    public bool DebugAllowOverlayCapture { get; set; } = false;
 
     public List<UserPreset> UserPresets { get; set; } = [];
 }

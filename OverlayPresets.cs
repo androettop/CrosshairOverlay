@@ -54,6 +54,8 @@ public static class OverlayPresets
         MotionDeadZonePixels = src.MotionDeadZonePixels,
 
         DebugShowMotionCapturePreview = src.DebugShowMotionCapturePreview,
+        DebugAllowConfigWindowCapture = src.DebugAllowConfigWindowCapture,
+        DebugAllowOverlayCapture = src.DebugAllowOverlayCapture,
     };
 
     /// <summary>Writes the Appearance, Motion and Debug fields from <paramref name="v"/> into <paramref name="dst"/>.</summary>
@@ -93,6 +95,8 @@ public static class OverlayPresets
         dst.MotionDeadZonePixels = v.MotionDeadZonePixels;
 
         dst.DebugShowMotionCapturePreview = v.DebugShowMotionCapturePreview;
+        dst.DebugAllowConfigWindowCapture = v.DebugAllowConfigWindowCapture;
+        dst.DebugAllowOverlayCapture = v.DebugAllowOverlayCapture;
     }
 
     /// <summary>Creates an <see cref="OverlaySettings"/> snapshot suitable for preview rendering from a <see cref="PresetValues"/>.</summary>

@@ -125,9 +125,9 @@ public partial class App : Application
 
     private void OnConfigWindowOpened(object? sender, EventArgs e)
     {
-        if (sender is ConfigWindow window)
+        if (sender is ConfigWindow window && _settingsStore is not null)
         {
-            _platformService.SetExcludeFromCapture(window, true);
+            _platformService.SetExcludeFromCapture(window, !_settingsStore.Current.DebugAllowConfigWindowCapture);
         }
     }
 
@@ -145,6 +145,11 @@ public partial class App : Application
     private void OnSettingsChanged(object? sender, OverlaySettings settings)
     {
         UpdateTrayLocalization(settings.Language);
+
+        if (_configWindow is not null)
+        {
+            _platformService.SetExcludeFromCapture(_configWindow, !settings.DebugAllowConfigWindowCapture);
+        }
 
         var selectionKey = BuildMonitorSelectionKey(settings.EnabledMonitorIndices);
         if (!string.Equals(selectionKey, _lastMonitorSelectionKey, StringComparison.Ordinal))

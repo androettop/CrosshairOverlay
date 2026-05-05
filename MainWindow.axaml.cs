@@ -66,7 +66,8 @@ public partial class MainWindow : Window
     private void ApplySettings(OverlaySettings settings)
     {
         Crosshair.ApplySettings(settings);
-        _platformService.SetExcludeFromCapture(this, settings.EnableMotionDetection);
+        var excludeFromCapture = settings.EnableMotionDetection && !settings.DebugAllowOverlayCapture;
+        _platformService.SetExcludeFromCapture(this, excludeFromCapture);
         RestartCaptureTimer(settings);
     }
 

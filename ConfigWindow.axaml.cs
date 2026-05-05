@@ -99,6 +99,8 @@ public partial class ConfigWindow : Window
         MotionCaptureFps.Value = settings.MotionCaptureFps;
         MotionDeadZonePixels.Value = settings.MotionDeadZonePixels;
         DebugShowMotionCapturePreview.IsChecked = settings.DebugShowMotionCapturePreview;
+        DebugAllowConfigWindowCapture.IsChecked = settings.DebugAllowConfigWindowCapture;
+        DebugAllowOverlayCapture.IsChecked = settings.DebugAllowOverlayCapture;
         var enabledMonitors = new HashSet<int>(settings.EnabledMonitorIndices ?? []);
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
@@ -170,6 +172,8 @@ public partial class ConfigWindow : Window
             settings.MotionCaptureFps = (int)Math.Round(MotionCaptureFps.Value);
             settings.MotionDeadZonePixels = MotionDeadZonePixels.Value;
             settings.DebugShowMotionCapturePreview = DebugShowMotionCapturePreview.IsChecked ?? false;
+            settings.DebugAllowConfigWindowCapture = DebugAllowConfigWindowCapture.IsChecked ?? false;
+            settings.DebugAllowOverlayCapture = DebugAllowOverlayCapture.IsChecked ?? false;
 
             settings.EnabledMonitorIndices = GetSelectedMonitorIndices();
         });
@@ -635,7 +639,7 @@ public partial class ConfigWindow : Window
         _searchSections.Add(new SearchSection(AppearanceTab, DotGridCard, ["grid", "dot grid", "grilla", "puntos", "spacing", "espaciado", "rows", "filas", "columns", "columnas", "radius", "radio", "color"]));
         _searchSections.Add(new SearchSection(AppearanceTab, CrosshairCard, ["crosshair", "mira", "gap", "separacion", "thickness", "grosor", "length", "largo", "color", "opacity"]));
         _searchSections.Add(new SearchSection(MotionTab, MotionDetectionCard, ["motion", "movement", "movimiento", "detection", "deteccion", "capture", "captura", "fps", "smoothing", "suavizado", "dead zone", "zona muerta"]));
-        _searchSections.Add(new SearchSection(DebugTab, DebugToolsCard, ["debug", "preview", "herramientas", "depuracion", "captured", "imagen"]));
+        _searchSections.Add(new SearchSection(DebugTab, DebugToolsCard, ["debug", "preview", "herramientas", "depuracion", "captured", "imagen", "overlay", "overlays", "config", "capture", "captura"]));
     }
 
     private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
@@ -805,6 +809,8 @@ public partial class ConfigWindow : Window
 
         DebugToolsTitle.Text = L("DebugTools");
         DebugShowMotionCapturePreview.Content = L("DebugShowMotionCapturePreview");
+        DebugAllowConfigWindowCapture.Content = L("DebugAllowConfigWindowCapture");
+        DebugAllowOverlayCapture.Content = L("DebugAllowOverlayCapture");
 
         PresetsTitle.Text = L("Presets");
         foreach (var (label, preset) in _presetLabels)
@@ -878,6 +884,8 @@ public partial class ConfigWindow : Window
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
             (true, "DebugTools") => "Herramientas de depuración",
             (true, "DebugShowMotionCapturePreview") => "Mostrar preview de la imagen capturada",
+            (true, "DebugAllowConfigWindowCapture") => "Permitir capturar la ventana de configuración",
+            (true, "DebugAllowOverlayCapture") => "Permitir capturar los overlays",
             (true, "Presets") => "Preestablecidos",
             (true, "Preset_default-crosshair") => "Mira",
             (true, "Preset_default-dotgrid") => "Grilla de puntos",
@@ -940,6 +948,8 @@ public partial class ConfigWindow : Window
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
             (false, "DebugTools") => "Debug Tools",
             (false, "DebugShowMotionCapturePreview") => "Show captured motion image preview",
+            (false, "DebugAllowConfigWindowCapture") => "Allow capturing the config window",
+            (false, "DebugAllowOverlayCapture") => "Allow capturing overlays",
             (false, "Presets") => "Presets",
             (false, "Preset_default-crosshair") => "Crosshair",
             (false, "Preset_default-dotgrid") => "Dot Grid",
