@@ -84,9 +84,6 @@ public partial class ConfigWindow : Window
         MotionCancellationIntensity.Value = settings.MotionCancellationIntensity;
         MotionCaptureFps.Value = settings.MotionCaptureFps;
         MotionDeadZonePixels.Value = settings.MotionDeadZonePixels;
-        var motionMonitorIdx = Math.Clamp(settings.MotionMonitorIndex, 0, Math.Max(0, MotionMonitorCaptureIndex.Items.Count - 1));
-        MotionMonitorCaptureIndex.SelectedIndex = motionMonitorIdx;
-
         var enabledMonitors = new HashSet<int>(settings.EnabledMonitorIndices ?? []);
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
@@ -156,7 +153,6 @@ public partial class ConfigWindow : Window
             settings.MotionCancellationIntensity = MotionCancellationIntensity.Value;
             settings.MotionCaptureFps = (int)Math.Round(MotionCaptureFps.Value);
             settings.MotionDeadZonePixels = MotionDeadZonePixels.Value;
-            settings.MotionMonitorIndex = Math.Max(0, MotionMonitorCaptureIndex.SelectedIndex);
 
             settings.EnabledMonitorIndices = GetSelectedMonitorIndices();
         });
@@ -173,22 +169,6 @@ public partial class ConfigWindow : Window
             checkBox.IsCheckedChanged += OnAnySettingChanged;
             _monitorCheckBoxes.Add(checkBox);
             MonitorSelectorPanel.Children.Add(checkBox);
-        }
-
-        // Populate motion-capture monitor selector
-        MotionMonitorCaptureIndex.Items.Clear();
-        for (var i = 0; i < _monitorBounds.Count; i++)
-        {
-            var bounds = _monitorBounds[i];
-            MotionMonitorCaptureIndex.Items.Add(new ComboBoxItem
-            {
-                Content = $"Monitor {i + 1} ({bounds.Width}x{bounds.Height})"
-            });
-        }
-
-        if (MotionMonitorCaptureIndex.Items.Count > 0)
-        {
-            MotionMonitorCaptureIndex.SelectedIndex = 0;
         }
 
         ApplyLocalization();
@@ -267,8 +247,6 @@ public partial class ConfigWindow : Window
         MotionDetectionTitle.Text = L("MotionDetection");
         EnableMotionDetection.Content = L("EnableMotionDetection");
         MotionRegionPreview.Content = L("MotionRegionPreview");
-        MotionMonitorLabel.Text = L("MotionMonitorLabel");
-
         for (var i = 0; i < _monitorCheckBoxes.Count; i++)
         {
             var bounds = _monitorBounds[i];
@@ -317,8 +295,6 @@ public partial class ConfigWindow : Window
             (true, "MotionCancellationIntensity") => "Intensidad de cancelación",
             (true, "MotionCaptureFps") => "FPS de captura",
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
-            (true, "MotionMonitorLabel") => "Monitor de captura",
-
             (false, "WindowTitle") => "Crosshair Overlay Settings",
             (false, "HeaderTitle") => "Overlay Settings",
             (false, "General") => "General",
@@ -356,8 +332,6 @@ public partial class ConfigWindow : Window
             (false, "MotionCancellationIntensity") => "Cancellation intensity",
             (false, "MotionCaptureFps") => "Capture FPS",
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
-            (false, "MotionMonitorLabel") => "Capture monitor",
-
             _ => key
         };
     }

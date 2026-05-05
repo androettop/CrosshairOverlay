@@ -67,6 +67,4 @@ public sealed class OverlaySettings
     public int MotionCaptureFps { get; set; } = 30;
 
     public double MotionDeadZonePixels { get; set; } = 0.5;
-
-    public int MotionMonitorIndex { get; set; } = 0;
 }

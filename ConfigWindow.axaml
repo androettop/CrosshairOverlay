@@ -140,8 +140,6 @@
                     <TextBlock x:Name="MotionDeadZonePixelsLabel" Text="Dead zone (px): 0.5" />
                     <Slider x:Name="MotionDeadZonePixels" Minimum="0" Maximum="5" Value="0.5" TickFrequency="0.1" ValueChanged="OnAnySettingChanged" />
 
-                    <TextBlock x:Name="MotionMonitorLabel" Text="Capture monitor" />
-                    <ComboBox x:Name="MotionMonitorCaptureIndex" SelectionChanged="OnAnySettingChanged" />
                 </StackPanel>
             </Border>
         </StackPanel>

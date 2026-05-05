@@ -80,7 +80,6 @@ public sealed class SettingsService
         settings.MotionCancellationIntensity = Math.Clamp(settings.MotionCancellationIntensity, 0, 3);
         settings.MotionCaptureFps = Math.Clamp(settings.MotionCaptureFps, 10, 60);
         settings.MotionDeadZonePixels = Math.Clamp(settings.MotionDeadZonePixels, 0, 5);
-        settings.MotionMonitorIndex = Math.Max(0, settings.MotionMonitorIndex);
 
         settings.EnabledMonitorIndices ??= [];
         settings.EnabledMonitorIndices = SanitizeMonitorIndices(settings.EnabledMonitorIndices);

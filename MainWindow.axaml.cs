@@ -110,8 +110,6 @@ public partial class MainWindow : Window
 
         var regionSize = Math.Max(64, settings.MotionRegionSize);
 
-        // Capture from the center of the configured monitor
-        var monitorIdx = Math.Clamp(settings.MotionMonitorIndex, 0, int.MaxValue);
         var captureX = _monitorBounds.X + (_monitorBounds.Width - regionSize) / 2;
         var captureY = _monitorBounds.Y + (_monitorBounds.Height - regionSize) / 2;
 
