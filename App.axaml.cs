@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using CrosshairOverlay.Platform;
+using CrosshairOverlay.Platform.Linux;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,17 +16,35 @@ public partial class App : Application
 {
     private IClassicDesktopStyleApplicationLifetime? _desktop;
     private OverlaySettingsStore? _settingsStore;
-    private readonly IWindowsOverlayPlatformService _platformService =
-        OperatingSystem.IsMacOS()
-            ? new MacOsOverlayPlatformService()
-            : new WindowsOverlayPlatformService();
     private readonly WindowsDisplayService _displayService = new();
+
+    // Only Wayland gates screen capture behind a permission prompt; null elsewhere.
+    private readonly WaylandScreenCaptureService? _captureService;
+    private readonly IWindowsOverlayPlatformService _platformService;
     private readonly List<MainWindow> _overlayWindows = [];
     private ConfigWindow? _configWindow;
     private string _lastMonitorSelectionKey = string.Empty;
+    private bool _motionCaptureRequested;
     private NativeMenuItem? _openSettingsItem;
     private NativeMenuItem? _exitItem;
     private TrayIcon? _trayIcon;
+
+    public App()
+    {
+        if (OperatingSystem.IsMacOS())
+        {
+            _platformService = new MacOsOverlayPlatformService();
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            _captureService = new WaylandScreenCaptureService(() => _displayService.GetLinuxMonitors());
+            _platformService = new LinuxOverlayPlatformService(_captureService);
+        }
+        else
+        {
+            _platformService = new WindowsOverlayPlatformService();
+        }
+    }
 
     public override void Initialize()
     {
@@ -43,8 +62,11 @@ public partial class App : Application
             _settingsStore = new OverlaySettingsStore(settingsService);
             _settingsStore.SettingsChanged += OnSettingsChanged;
 
+            _desktop.ShutdownRequested += (_, _) => _captureService?.Dispose();
+
             CreateTrayIcon();
             RebuildOverlayWindows(_settingsStore.Current);
+            SyncScreenCapture(_settingsStore.Current);
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -117,7 +139,7 @@ public partial class App : Application
             return;
         }
 
-        _configWindow = new ConfigWindow(_settingsStore, _displayService.GetMonitorBounds());
+        _configWindow = new ConfigWindow(_settingsStore, _displayService.GetMonitorBounds(), _captureService);
         _configWindow.Opened += OnConfigWindowOpened;
         _configWindow.Closed += (_, _) => _configWindow = null;
         FocusConfigWindow(_configWindow);
@@ -145,6 +167,7 @@ public partial class App : Application
     private void OnSettingsChanged(object? sender, OverlaySettings settings)
     {
         UpdateTrayLocalization(settings.Language);
+        SyncScreenCapture(settings);
 
         if (_configWindow is not null)
         {
@@ -155,6 +178,36 @@ public partial class App : Application
         if (!string.Equals(selectionKey, _lastMonitorSelectionKey, StringComparison.Ordinal))
         {
             RebuildOverlayWindows(settings);
+        }
+    }
+
+    /// <summary>
+    /// Keeps the capture session tied to the motion detection toggle: turning motion detection on
+    /// asks the compositor for permission, turning it off closes the session. Toggling it therefore
+    /// always produces a fresh permission prompt.
+    /// </summary>
+    private void SyncScreenCapture(OverlaySettings settings)
+    {
+        if (_captureService is null)
+        {
+            return;
+        }
+
+        _captureService.TargetFramesPerSecond = settings.MotionCaptureFps;
+
+        if (settings.EnableMotionDetection == _motionCaptureRequested)
+        {
+            return;
+        }
+
+        _motionCaptureRequested = settings.EnableMotionDetection;
+        if (_motionCaptureRequested)
+        {
+            _captureService.RequestAccess();
+        }
+        else
+        {
+            _captureService.Stop();
         }
     }
 

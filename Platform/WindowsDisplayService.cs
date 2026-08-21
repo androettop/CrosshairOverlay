@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Avalonia;
 
 namespace CrosshairOverlay.Platform;
+
+/// <summary>A monitor as seen by X11, paired with the output name the compositor uses for it.</summary>
+public readonly record struct LinuxMonitor(string Name, PixelRect Bounds);
 
 public sealed class WindowsDisplayService
 {
@@ -14,6 +18,9 @@ public sealed class WindowsDisplayService
 
         if (OperatingSystem.IsMacOS())
             return GetMacOsMonitorBounds();
+
+        if (OperatingSystem.IsLinux())
+            return GetLinuxMonitorBounds();
 
         return [new PixelRect(0, 0, 1920, 1080)];
     }
@@ -47,6 +54,96 @@ public sealed class WindowsDisplayService
     private struct RectStruct
     {
         public int Left, Top, Right, Bottom;
+    }
+
+    // ── Linux ────────────────────────────────────────────────────────────────
+
+    private IReadOnlyList<PixelRect> GetLinuxMonitorBounds()
+        => [.. GetLinuxMonitors().Select(monitor => monitor.Bounds)];
+
+    /// <summary>
+    /// Enumerates monitors through XRandR, which also reports each output's name. Under Wayland the
+    /// app runs on XWayland, which mirrors the compositor's outputs one for one, so those names match
+    /// the <c>mapping_id</c> the ScreenCast portal attaches to its streams — the only reliable way to
+    /// tell which monitor a stream came from.
+    /// </summary>
+    public IReadOnlyList<LinuxMonitor> GetLinuxMonitors()
+    {
+        if (!OperatingSystem.IsLinux())
+            return [];
+
+        var display = IntPtr.Zero;
+        var monitorList = IntPtr.Zero;
+
+        try
+        {
+            display = X11Interop.XOpenDisplay(IntPtr.Zero);
+            if (display == IntPtr.Zero)
+                return [new LinuxMonitor(string.Empty, new PixelRect(0, 0, 1920, 1080))];
+
+            var root = XDefaultRootWindow(display);
+            monitorList = XRRGetMonitors(display, root, true, out var count);
+            if (monitorList == IntPtr.Zero || count <= 0)
+                return [new LinuxMonitor(string.Empty, new PixelRect(0, 0, 1920, 1080))];
+
+            var monitors = new List<LinuxMonitor>(count);
+            var itemSize = Marshal.SizeOf<XRRMonitorInfo>();
+            for (var i = 0; i < count; i++)
+            {
+                var info = Marshal.PtrToStructure<XRRMonitorInfo>(monitorList + (i * itemSize));
+                var namePointer = XGetAtomName(display, info.Name);
+                var name = namePointer == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUTF8(namePointer) ?? string.Empty;
+                if (namePointer != IntPtr.Zero)
+                    XFree(namePointer);
+
+                monitors.Add(new LinuxMonitor(name, new PixelRect(info.X, info.Y, info.Width, info.Height)));
+            }
+
+            return monitors;
+        }
+        catch (Exception)
+        {
+            return [new LinuxMonitor(string.Empty, new PixelRect(0, 0, 1920, 1080))];
+        }
+        finally
+        {
+            if (monitorList != IntPtr.Zero)
+                XRRFreeMonitors(monitorList);
+            if (display != IntPtr.Zero)
+                X11Interop.XCloseDisplay(display);
+        }
+    }
+
+    [DllImport("libX11.so.6")]
+    private static extern IntPtr XDefaultRootWindow(IntPtr display);
+
+    [DllImport("libX11.so.6")]
+    private static extern IntPtr XGetAtomName(IntPtr display, IntPtr atom);
+
+    [DllImport("libX11.so.6")]
+    private static extern int XFree(IntPtr data);
+
+    [DllImport("libXrandr.so.2")]
+    private static extern IntPtr XRRGetMonitors(IntPtr display, IntPtr window,
+        [MarshalAs(UnmanagedType.Bool)] bool getActive, out int monitorCount);
+
+    [DllImport("libXrandr.so.2")]
+    private static extern void XRRFreeMonitors(IntPtr monitors);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XRRMonitorInfo
+    {
+        public IntPtr Name;
+        public int Primary;
+        public int Automatic;
+        public int OutputCount;
+        public int X;
+        public int Y;
+        public int Width;
+        public int Height;
+        public int PhysicalWidth;
+        public int PhysicalHeight;
+        public IntPtr Outputs;
     }
 
     // ── macOS ─────────────────────────────────────────────────────────────────

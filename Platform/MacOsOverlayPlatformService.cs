@@ -57,6 +57,11 @@ public sealed class MacOsOverlayPlatformService : IWindowsOverlayPlatformService
         return false;
     }
 
+    public void PrepareOverlayWindow(Window window)
+    {
+        // Nothing has to happen before the window is shown on this platform.
+    }
+
     public void EnableClickThrough(Window window)
     {
         if (!OperatingSystem.IsMacOS())

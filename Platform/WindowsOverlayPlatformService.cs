@@ -21,6 +21,11 @@ public sealed class WindowsOverlayPlatformService : IWindowsOverlayPlatformServi
     private const uint SrcCopy = 0x00CC0020;
     private const uint BiRgb = 0;
 
+    public void PrepareOverlayWindow(Window window)
+    {
+        // Nothing has to happen before the window is shown on this platform.
+    }
+
     public void EnableClickThrough(Window window)
     {
         if (!OperatingSystem.IsWindows())

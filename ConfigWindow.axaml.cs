@@ -10,6 +10,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using CrosshairOverlay.Platform;
 
 namespace CrosshairOverlay;
 
@@ -21,6 +22,7 @@ public partial class ConfigWindow : Window
 
     private readonly OverlaySettingsStore _settingsStore;
     private readonly IReadOnlyList<PixelRect> _monitorBounds;
+    private readonly IScreenCaptureAccess? _screenCaptureAccess;
     private readonly List<CheckBox> _monitorCheckBoxes = [];
     private readonly List<SearchSection> _searchSections = [];
     private readonly List<(TextBlock Label, OverlayPreset Preset)> _presetLabels = [];
@@ -30,14 +32,16 @@ public partial class ConfigWindow : Window
     private bool _isInitialized;
 
     public ConfigWindow()
-        : this(new OverlaySettingsStore(new SettingsService()), [new PixelRect(0, 0, 1920, 1080)])
+        : this(new OverlaySettingsStore(new SettingsService()), [new PixelRect(0, 0, 1920, 1080)], null)
     {
     }
 
-    public ConfigWindow(OverlaySettingsStore settingsStore, IReadOnlyList<PixelRect> monitorBounds)
+    public ConfigWindow(OverlaySettingsStore settingsStore, IReadOnlyList<PixelRect> monitorBounds,
+        IScreenCaptureAccess? screenCaptureAccess)
     {
         _settingsStore = settingsStore;
         _monitorBounds = monitorBounds;
+        _screenCaptureAccess = screenCaptureAccess?.RequiresPermission == true ? screenCaptureAccess : null;
         _isUpdatingUi = true;
         InitializeComponent();
         Icon = App.TryCreateTrayIcon();
@@ -45,6 +49,12 @@ public partial class ConfigWindow : Window
         InitializeSearchSections();
         BuildMonitorSelectors();
         BuildPresets();
+
+        ScreenCaptureAccessCard.IsVisible = _screenCaptureAccess is not null;
+        if (_screenCaptureAccess is not null)
+        {
+            _screenCaptureAccess.StateChanged += OnScreenCaptureStateChanged;
+        }
 
         _settingsStore.SettingsChanged += OnStoreSettingsChanged;
         Closed += OnClosed;
@@ -62,6 +72,67 @@ public partial class ConfigWindow : Window
     private void OnClosed(object? sender, EventArgs e)
     {
         _settingsStore.SettingsChanged -= OnStoreSettingsChanged;
+
+        if (_screenCaptureAccess is not null)
+        {
+            _screenCaptureAccess.StateChanged -= OnScreenCaptureStateChanged;
+        }
+    }
+
+    private void OnScreenCaptureStateChanged(object? sender, EventArgs e)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(UpdateScreenCaptureAccessCard);
+    }
+
+    private void OnRequestScreenCaptureAccess(object? sender, RoutedEventArgs e)
+    {
+        if (_screenCaptureAccess is null)
+        {
+            return;
+        }
+
+        // Asking for access is only meaningful while motion detection is on, since that is what
+        // owns the session; turn it on for the user rather than opening a session nothing consumes.
+        if (!_settingsStore.Current.EnableMotionDetection)
+        {
+            EnableMotionDetection.IsChecked = true;
+            return;
+        }
+
+        _screenCaptureAccess.RequestAccess();
+    }
+
+    private void UpdateScreenCaptureAccessCard()
+    {
+        if (_screenCaptureAccess is null)
+        {
+            return;
+        }
+
+        var state = _screenCaptureAccess.State;
+        ScreenCaptureAccessTitle.Text = L("ScreenCaptureAccess");
+        ScreenCaptureAccessDescription.Text = L("ScreenCaptureAccessDescription");
+
+        var (statusKey, colour) = state switch
+        {
+            ScreenCaptureAccessState.Active => ("ScreenCaptureActive", "#22C55E"),
+            ScreenCaptureAccessState.Requesting => ("ScreenCaptureRequesting", "#EAB308"),
+            ScreenCaptureAccessState.Denied => ("ScreenCaptureDenied", "#EF4444"),
+            ScreenCaptureAccessState.Failed => ("ScreenCaptureFailed", "#EF4444"),
+            _ => ("ScreenCaptureInactive", "#6B7280"),
+        };
+
+        var status = L(statusKey);
+        if (state == ScreenCaptureAccessState.Failed && _screenCaptureAccess.StateDetail is { Length: > 0 } detail)
+        {
+            status = $"{status} — {detail}";
+        }
+
+        ScreenCaptureStatusText.Text = status;
+        ScreenCaptureStatusDot.Background = new SolidColorBrush(Color.Parse(colour));
+        ScreenCaptureRequestButton.Content = state == ScreenCaptureAccessState.Active
+            ? L("ScreenCaptureReconnect")
+            : L("ScreenCaptureGrant");
     }
 
     private void PopulateFromSettings(OverlaySettings settings)
@@ -684,6 +755,7 @@ public partial class ConfigWindow : Window
         _searchSections.Add(new SearchSection(AppearanceTab, DotGridCard, ["grid", "dot grid", "grilla", "puntos", "spacing", "espaciado", "rows", "filas", "columns", "columnas", "radius", "radio", "color"]));
         _searchSections.Add(new SearchSection(AppearanceTab, CrosshairCard, ["crosshair", "mira", "gap", "separacion", "thickness", "grosor", "length", "largo", "color", "opacity"]));
         _searchSections.Add(new SearchSection(MotionTab, MotionDetectionCard, ["motion", "movement", "movimiento", "detection", "deteccion", "capture", "captura", "fps", "smoothing", "suavizado", "dead zone", "zona muerta"]));
+        _searchSections.Add(new SearchSection(MotionTab, ScreenCaptureAccessCard, ["capture", "captura", "permission", "permiso", "wayland", "portal", "screen", "pantalla", "access", "acceso", "reconnect", "reconectar"]));
         _searchSections.Add(new SearchSection(DebugTab, DebugToolsCard, ["debug", "preview", "herramientas", "depuracion", "captured", "imagen", "overlay", "overlays", "config", "capture", "captura"]));
     }
 
@@ -858,6 +930,7 @@ public partial class ConfigWindow : Window
         MotionDetectionExperimentalLabel.Text = L("Experimental");
         EnableMotionDetection.Content = L("EnableMotionDetection");
         MotionRegionPreview.Content = L("MotionRegionPreview");
+        UpdateScreenCaptureAccessCard();
 
         DebugToolsTitle.Text = L("DebugTools");
         DebugShowMotionCapturePreview.Content = L("DebugShowMotionCapturePreview");
@@ -935,6 +1008,16 @@ public partial class ConfigWindow : Window
             (true, "MotionCancellationIntensity") => "Intensidad de cancelación",
             (true, "MotionCaptureFps") => "FPS de captura",
             (true, "MotionDeadZonePixels") => "Zona muerta (px)",
+            (true, "ScreenCaptureAccess") => "Acceso a la captura de pantalla",
+            (true, "ScreenCaptureAccessDescription") =>
+                "En Wayland el compositor decide qué puede grabar cada aplicación. La detección de movimiento pide permiso al activarse; si lo rechazás o la sesión se corta, volvé a pedirlo desde acá.",
+            (true, "ScreenCaptureInactive") => "Sin sesión: activá la detección de movimiento para pedir permiso.",
+            (true, "ScreenCaptureRequesting") => "Esperando que aceptes el permiso de compartir pantalla…",
+            (true, "ScreenCaptureActive") => "Conectado: llegando cuadros del compositor.",
+            (true, "ScreenCaptureDenied") => "Permiso rechazado. La detección de movimiento no puede funcionar sin él.",
+            (true, "ScreenCaptureFailed") => "La captura falló",
+            (true, "ScreenCaptureGrant") => "Dar acceso",
+            (true, "ScreenCaptureReconnect") => "Reconectar",
             (true, "DebugTools") => "Herramientas de depuración",
             (true, "DebugShowMotionCapturePreview") => "Mostrar preview de la imagen capturada",
             (true, "DebugAllowConfigWindowCapture") => "Permitir capturar la ventana de configuración",
@@ -1000,6 +1083,16 @@ public partial class ConfigWindow : Window
             (false, "MotionCancellationIntensity") => "Cancellation intensity",
             (false, "MotionCaptureFps") => "Capture FPS",
             (false, "MotionDeadZonePixels") => "Dead zone (px)",
+            (false, "ScreenCaptureAccess") => "Screen capture access",
+            (false, "ScreenCaptureAccessDescription") =>
+                "On Wayland the compositor decides what each application may record. Motion detection asks for permission when you enable it; if you decline or the session drops, ask again from here.",
+            (false, "ScreenCaptureInactive") => "No session: enable motion detection to ask for permission.",
+            (false, "ScreenCaptureRequesting") => "Waiting for you to approve the screen sharing prompt…",
+            (false, "ScreenCaptureActive") => "Connected: frames are arriving from the compositor.",
+            (false, "ScreenCaptureDenied") => "Permission denied. Motion detection cannot work without it.",
+            (false, "ScreenCaptureFailed") => "Capture failed",
+            (false, "ScreenCaptureGrant") => "Grant access",
+            (false, "ScreenCaptureReconnect") => "Reconnect",
             (false, "DebugTools") => "Debug Tools",
             (false, "DebugShowMotionCapturePreview") => "Show captured motion image preview",
             (false, "DebugAllowConfigWindowCapture") => "Allow capturing the config window",
