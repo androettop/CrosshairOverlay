@@ -39,6 +39,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         ConfigureOverlayWindow();
+        _platformService.PrepareOverlayWindow(this);
         Icon = App.TryCreateTrayIcon();
         ApplySettings(_settingsStore.Current);
 
@@ -50,6 +51,9 @@ public partial class MainWindow : Window
 
     private void ConfigureOverlayWindow()
     {
+        // A stable, unlocalized title: compositor rules that target the overlay (to strip shadows,
+        // dimming and rounding) need to tell it apart from the settings window, which shares its class.
+        Title = "Crosshair Overlay";
         Background = Brushes.Transparent;
         Topmost = true;
         CanResize = false;

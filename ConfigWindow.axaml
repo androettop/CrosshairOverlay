@@ -243,6 +243,18 @@
                                     <Slider x:Name="MotionDeadZonePixels" Minimum="0" Maximum="5" Value="0.5" TickFrequency="0.1" ValueChanged="OnAnySettingChanged" />
                                 </StackPanel>
                             </Border>
+
+                            <Border x:Name="ScreenCaptureAccessCard" Background="#1A1E24" BorderBrush="#343A44" BorderThickness="1" CornerRadius="10" Padding="16" IsVisible="False">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Name="ScreenCaptureAccessTitle" Text="Screen capture access" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="ScreenCaptureAccessDescription" Text="" Opacity="0.78" TextWrapping="Wrap" />
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                        <Border x:Name="ScreenCaptureStatusDot" Grid.Column="0" Width="10" Height="10" CornerRadius="5" Background="#6B7280" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="ScreenCaptureStatusText" Grid.Column="1" Text="" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                    </Grid>
+                                    <Button x:Name="ScreenCaptureRequestButton" Content="Grant access" Click="OnRequestScreenCaptureAccess" HorizontalAlignment="Left" Padding="12,6" />
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>

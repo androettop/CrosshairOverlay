@@ -4,6 +4,13 @@ namespace CrosshairOverlay.Platform;
 
 public interface IWindowsOverlayPlatformService
 {
+    /// <summary>
+    /// Applies the window flags that have to be in place before the window is mapped for the first
+    /// time. On Linux the override-redirect flag is only read when a window is mapped, so setting it
+    /// afterwards would leave the overlay in the compositor's managed window list — and in alt-tab.
+    /// </summary>
+    void PrepareOverlayWindow(Window window);
+
     void EnableClickThrough(Window window);
 
     /// <summary>
