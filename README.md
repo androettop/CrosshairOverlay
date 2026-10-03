@@ -4,6 +4,8 @@ An always-on-top transparent crosshair for Windows, macOS and Linux that helps *
 
 > A static anchor at the center of the screen helps your brain reconcile on-screen motion, reducing nausea and disorientation caused by games without a built-in crosshair.
 
+![Crosshair Overlay settings window with the presets](screenshots/settings.png)
+
 ## Features
 
 - Center dot, classic crosshair, and dot grid — fully customizable
